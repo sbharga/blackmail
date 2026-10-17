@@ -8,13 +8,13 @@ Write naturally. Send an approved formal version through your usual app; share t
 
 ## Try the demo
 
-- **Chat demo:** Alice chats with Bob or Maya. Switch Alice/Bob perspectives and **Normal / BlackMail** views.
-- Write a message, polish with AI (or edit manually), review, and send. Share its demo pass, then switch to the recipient.
-- Revoke the original: the formal record stays. **Reset demo** starts over.
+- **Messenger:** a chat UI (black + Signal-blue) with a contacts sidebar — direct threads with Bob and Maya plus a **group chat** (Launch Week). Write naturally, **Polish** with AI (or edit), review the formal version, and **Seal & send**.
+- Flip the sliding **Formal / Original** toggle to reveal the real voice behind each message, with a live auto-lock countdown. Switch identity (⇄) to read a thread as the recipient. **Revoke** removes the original; the formal record stays.
+- Sending creates a **real encrypted vault pass** (it also appears under *Your passes*); **Original** fetches the ciphertext back from the vault and decrypts it in the browser; **Revoke** deletes the vault record. If the server is offline the chat falls back to a local simulation so the UI still demonstrates.
 
-Contacts, chat delivery, and passes in Chat demo are an **in-memory simulation**, cleared on reload. AI polishing calls Nebius. No real messages are sent.
+Identity-switch and the seeded sample messages are a single-browser simulation; encryption, storage, five-minute expiry, and revocation are the real backend. AI polishing calls Nebius. Group messages use one shared pass (bearer model: anyone holding the pass can open it).
 
-For real encrypted passes: **Compose** → approve both versions → copy/send formal text through another app → create/share the five-minute pass → recipient uses **Open a pass**. Revoke via **Your passes**.
+Also available as separate workspaces: **Compose** (two-column original/formal + create pass), **Open a pass**, and **Your passes**. Branding and a logo-generation prompt live in `branding/` (`extension/logo.svg` is the starter mark).
 
 ## Ideal setup
 

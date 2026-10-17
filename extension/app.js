@@ -12,7 +12,7 @@ let polling = false;
 let creating = false;
 let serverOffset = 0;
 const serverNow = () => Date.now() + serverOffset;
-export { api, serverNow };
+export { api, serverNow, createPass, openPass, probePass, revokePass, addToHistory };
 let history;
 try { history = JSON.parse(localStorage.getItem('blackmail.sent') || '[]'); if (!Array.isArray(history)) history = []; } catch { history = []; }
 const status = text => { $('status').textContent = text; };
@@ -30,6 +30,33 @@ async function api(path, body, method = 'POST', token) {
   if (!response.ok) throw Object.assign(new Error(result.error || 'Request failed.'), { status: response.status });
   return result;
 }
+// --- Reusable vault helpers (shared by the Compose workspace and the chat demo) ---
+// Encrypt an original in the browser, store only ciphertext + hashed capabilities in the vault,
+// and return the shareable pass plus the revocation owner key. The decryption key never leaves here.
+async function createPass(original) {
+  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(original)));
+  const access = hex(crypto.getRandomValues(new Uint8Array(32)));
+  const secret = hex(new Uint8Array(await crypto.subtle.exportKey('raw', key)));
+  const item = await api('/api/messages', { ciphertext: b64(ciphertext), iv: b64(iv), access });
+  return { id: item.id, owner: item.owner, access, secret, expiresAt: item.expiresAt, pass: `bm1.${item.id}.${access}.${secret}` };
+}
+// Fetch ciphertext from the vault (fails if expired/revoked) and decrypt it with the pass key.
+async function openPass(id, access, secret) {
+  const result = await api(`/api/messages/${id}/open`, { access });
+  const key = await crypto.subtle.importKey('raw', unhex(secret), 'AES-GCM', false, ['decrypt']);
+  let plain;
+  try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(result.iv) }, key, unb64(result.ciphertext)); }
+  catch { throw new Error('Could not decrypt. Check the complete pass.'); }
+  return { text: new TextDecoder().decode(plain), expiresAt: result.expiresAt };
+}
+// Liveness check: resolves if the pass is still retrievable, throws otherwise. No decryption.
+const probePass = (id, access) => api(`/api/messages/${id}/open`, { access });
+// Delete the vault record, removing future access to the original.
+const revokePass = (id, owner) => api(`/api/messages/${id}`, { owner }, 'DELETE');
+// Record a created pass in local sender history so it also appears under "Your passes".
+function addToHistory(entry) { history.unshift({ ...entry }); save(); }
 function tab(name) {
   document.querySelectorAll('.panel').forEach(el => el.classList.toggle('hidden', el.id !== name));
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
@@ -74,19 +101,12 @@ action('seal', async () => {
   if (!original.trim() || !formal.trim()) throw new Error('Write both versions before creating a pass.');
   creating = true;
   try {
-    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(original)));
-    const access = hex(crypto.getRandomValues(new Uint8Array(32)));
-    const rawKey = hex(new Uint8Array(await crypto.subtle.exportKey('raw', key)));
-    const item = await api('/api/messages', { ciphertext: b64(ciphertext), iv: b64(iv), access });
-    const pass = `bm1.${item.id}.${access}.${rawKey}`;
+    const sealed = await createPass(original);
     // Keep only formal text and revocation capability. No original or decryption key in history.
-    history.unshift({ ...item, formal, createdAt: Date.now(), revoked: false });
-    save();
-    activeCreated = { pass, expiresAt: item.expiresAt };
-    $('share-pass').value = pass;
-    $('created-time').textContent = remaining(item.expiresAt);
+    addToHistory({ id: sealed.id, owner: sealed.owner, expiresAt: sealed.expiresAt, formal, createdAt: Date.now(), revoked: false });
+    activeCreated = { pass: sealed.pass, expiresAt: sealed.expiresAt };
+    $('share-pass').value = sealed.pass;
+    $('created-time').textContent = remaining(sealed.expiresAt);
     $('created').classList.remove('hidden');
     status('Pass created. Formal message has NOT been sent. Copy and send it through your app.');
   } finally { creating = false; }
@@ -102,15 +122,11 @@ action('unlock', async () => {
   const match = /^bm1\.([a-f0-9]{32})\.([a-f0-9]{64})\.([a-f0-9]{64})$/.exec(pass);
   if (!match) throw new Error('Invalid pass. Paste the complete bm1… code.');
   const [, id, access, secret] = match;
-  const result = await api(`/api/messages/${id}/open`, { access });
-  const key = await crypto.subtle.importKey('raw', unhex(secret), 'AES-GCM', false, ['decrypt']);
-  let plain;
-  try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(result.iv) }, key, unb64(result.ciphertext)); }
-  catch { throw new Error('Could not decrypt. Check the complete pass.'); }
-  if (result.expiresAt <= serverNow()) throw new Error('Pass expired.');
-  activeRead = { id, access, expiresAt: result.expiresAt };
-  $('plaintext').textContent = new TextDecoder().decode(plain);
-  $('read-time').textContent = remaining(result.expiresAt);
+  const opened = await openPass(id, access, secret);
+  if (opened.expiresAt <= serverNow()) throw new Error('Pass expired.');
+  activeRead = { id, access, expiresAt: opened.expiresAt };
+  $('plaintext').textContent = opened.text;
+  $('read-time').textContent = remaining(opened.expiresAt);
   $('opened').classList.remove('hidden');
   $('incoming').value = '';
   status('Original unlocked. This view clears on expiry or revocation check.');

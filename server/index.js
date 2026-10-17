@@ -17,6 +17,7 @@ const assets = new Map([
   ['/messaging.js', ['messaging.js', 'text/javascript']],
   ['/messaging.css', ['messaging.css', 'text/css']],
   ['/style.css', ['style.css', 'text/css']],
+  ['/logo.svg', ['logo.svg', 'image/svg+xml']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {
   const messaging = createMessaging();
