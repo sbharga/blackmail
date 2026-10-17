@@ -10,6 +10,7 @@ import { PeerSignals } from './peer-signals.js';
 const assets = new Map([
   ['/', ['index.html', 'text/html']],
   ['/index.html', ['index.html', 'text/html']],
+  ['/message-view.js', ['message-view.js', 'text/javascript']],
   ['/peer-reconnect.js', ['peer-reconnect.js', 'text/javascript']],
   ['/message-delivery.js', ['message-delivery.js', 'text/javascript']],
   ['/p2p.js', ['p2p.js', 'text/javascript']],

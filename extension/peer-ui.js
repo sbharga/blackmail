@@ -36,7 +36,7 @@ export function setupPeerUI() {
   render();
   return {
     snapshot: () => session.snapshot(),
-    send: text => session.send(text),
+    send: (text, messageId) => session.send(text, messageId),
     wake: () => reconnect.tick(),
     account(id, request) { owner = id; call = request; },
     select(next) {
