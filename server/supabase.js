@@ -6,7 +6,7 @@ export function isPublishableKey(key) {
   try { return JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString()).role === 'anon'; }
   catch { return false; }
 }
-export function createMessaging({ url = process.env.SUPABASE_URL, key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY, fetchImpl = fetch } = {}) {
+export function createMessaging({ url = process.env.SUPABASE_URL, key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY, fetchImpl = fetch, peerSignals } = {}) {
   const enabled = Boolean(url?.startsWith('https://') && isPublishableKey(key));
   const fail = (status, message) => Object.assign(new Error(message), { status });
   async function request(path, { token, body, method = 'POST' } = {}) {
@@ -59,6 +59,19 @@ export function createMessaging({ url = process.env.SUPABASE_URL, key = process.
           return { status: 200, body: { session: { access_token: result.access_token, refresh_token: result.refresh_token, expires_at: result.expires_at || Math.floor(Date.now() / 1000) + result.expires_in } } };
         }
         const token = bearer(header);
+        if (route === 'peer-signals/read' || route === 'peer-signals/write') {
+          if (!peerSignals) throw fail(503, 'Automatic reconnect is not configured.');
+          if (!uuidPattern.test(body.contactId)) throw fail(400, 'Choose a contact first.');
+          const user = await request('/auth/v1/user', { token, method: 'GET' });
+          const contacts = await request('/rest/v1/rpc/list_contacts', { token, body: {} });
+          if (user.id === body.contactId || !contacts.some(contact => contact.id === body.contactId)) throw fail(403, 'Choose one of your contacts.');
+          if (route.endsWith('/read')) return { status: 200, body: { packet: await peerSignals.get(body.contactId, user.id) } };
+          const packet = body.packet;
+          if (!packet || typeof packet.iv !== 'string' || !/^[a-f0-9]{24}$/.test(packet.iv) ||
+              typeof packet.ciphertext !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(packet.ciphertext) || packet.ciphertext.length > 90000) throw fail(400, 'Invalid encrypted connection token.');
+          await peerSignals.put(user.id, body.contactId, { iv: packet.iv, ciphertext: packet.ciphertext });
+          return { status: 200, body: { ok: true } };
+        }
         if (route === 'logout') {
           await request('/auth/v1/logout?scope=local', { token });
           return { status: 200, body: { ok: true } };

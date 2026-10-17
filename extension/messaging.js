@@ -104,13 +104,22 @@ async function openInbox() {
   const result = await call('me');
   if (started !== epoch) return;
   profile = result.profile;
+  peerUI.account(profile.id, call);
   $('account-identity').textContent = `${profile.display_name} · @${profile.username}`;
   $('account-gate').classList.add('hidden'); $('live-inbox').classList.remove('hidden');
   contactsAt = 0; await sync(true);
+  if (started !== epoch) return;
+  try {
+    const previous = sessionStorage.getItem(`blackmail.selected:${profile.id}`);
+    const contact = contacts.find(item => item.id === previous);
+    if (contact) selectContact(contact);
+  } catch { /* Contact selection remains usable without storage. */ }
 }
 function selectContact(contact) {
+  if (selected?.id === contact.id) return;
   if (sending) { inboxStatus('Finish sending before changing conversation.'); return; }
   formalMessages = []; selected = contact; threadFingerprint = ''; peerUI.select(contact);
+  try { sessionStorage.setItem(`blackmail.selected:${profile.id}`, contact.id); } catch {}
   $('live-contact-name').textContent = contact.display_name;
   $('live-contact-username').textContent = `@${contact.username}`;
   $('live-avatar').textContent = contact.display_name[0]?.toUpperCase() || '?';

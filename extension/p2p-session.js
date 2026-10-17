@@ -3,6 +3,7 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
   let generation = 0, contact = null, peer = null, ticket = null;
   let state = 'Disconnected', lastSeen = 0, probe = null, remoteSession = null, deadline = 0;
   let localSession = crypto.randomUUID(), messages = [];
+  let controlHandler = () => {};
   const emit = () => changed();
   const snapshot = () => ({ contact, peer, state, messages: [...messages] });
   const reset = target => {
@@ -30,12 +31,20 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
     if (packet.type === 'pong' && packet.nonce === probe) {
       remoteSession = packet.session; lastSeen = now(); state = 'Connected'; emit(); return;
     }
+    if (packet.type === 'control' && state === 'Connected' && packet.session === remoteSession) {
+      controlHandler(packet.value); return;
+    }
     if (packet.type !== 'message' || state !== 'Connected' || packet.session !== remoteSession ||
         typeof packet.text !== 'string' || !packet.text.trim() || packet.text.length > 3000) return;
     messages.push({ text: packet.text, mine: false, createdAt: now() }); messages = messages.slice(-100); emit();
   });
   return {
     snapshot, reset, tick,
+    onControl(handler) { controlHandler = handler; },
+    async control(value) {
+      if (!peer || state !== 'Connected') throw new Error('Peer is offline.');
+      await transport.send_peer_too_peer(envelope('control', { value }), peer);
+    },
     async offer() {
       if (!contact) throw new Error('Select a contact first.');
       const target = contact; reset(target); const run = generation; state = 'Handshaking'; deadline = now() + 120000; emit();

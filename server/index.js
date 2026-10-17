@@ -5,10 +5,12 @@ import { resolve } from 'node:path';
 import { Vault } from './vault.js';
 import { RedisVault, redisCommand } from './redis-vault.js';
 import { createMessaging } from './supabase.js';
+import { PeerSignals } from './peer-signals.js';
 
 const assets = new Map([
   ['/', ['index.html', 'text/html']],
   ['/index.html', ['index.html', 'text/html']],
+  ['/peer-reconnect.js', ['peer-reconnect.js', 'text/javascript']],
   ['/message-delivery.js', ['message-delivery.js', 'text/javascript']],
   ['/p2p.js', ['p2p.js', 'text/javascript']],
   ['/p2p-session.js', ['p2p-session.js', 'text/javascript']],
@@ -24,9 +26,11 @@ const assets = new Map([
   ['/logo.svg', ['logo.svg', 'image/svg+xml']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {
-  const messaging = createMessaging();
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const messaging = createMessaging({ peerSignals: hosted && !(redisUrl && redisToken) ? null : new PeerSignals({
+    command: redisUrl && redisToken ? redisCommand(redisUrl, redisToken) : undefined, now,
+  }) });
   const vault = suppliedVault || (redisUrl && redisToken
     ? new RedisVault({ command: redisCommand(redisUrl, redisToken), now, ttlMs })
     : hosted ? null : new Vault({ now, ttlMs }));

@@ -40,7 +40,9 @@ npm test
 
 Open http://127.0.0.1:8787. For local AI, copy `.env.example` to `.env` and add `NEBIUS_API_KEY`. Never commit `.env`.
 
-**One composer:** connected sends a Nebius-reviewed formal version plus the P2P original; disconnected sends formal only. Connect through **Informal setup**. Both peers must stay online for originals. [Setup, tests and limits](docs/p2p.md).
+**Messages and Guide:** everyday chat lives in Messages; demo/pass tools are archived under Guide.
+
+**One composer:** connected sends a Nebius-reviewed formal version plus the P2P original; disconnected sends formal only. Connect through **Informal setup**. Both peers must stay online for originals. A seven-day remembered peer link reconnects after refresh; informal history clears, formal records stay. [Setup, tests and limits](docs/p2p.md).
 
 **Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. The extension points to the production API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`.
 
