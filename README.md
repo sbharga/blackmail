@@ -4,6 +4,8 @@
 
 Write naturally. Send an approved formal version through your usual app; share the original separately through a short-lived BlackMail pass.
 
+**`supabase-messaging` branch:** real signup/login, username contacts, and formal inbox delivery. [Setup and security checks](docs/supabase.md). This delivers inside BlackMail; external-app integration remains separate.
+
 ## Try the demo
 
 - **Chat demo:** Alice chats with Bob or Maya. Switch Alice/Bob perspectives and **Normal / BlackMail** views.

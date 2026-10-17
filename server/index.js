@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { Vault } from './vault.js';
 import { RedisVault, redisCommand } from './redis-vault.js';
+import { createMessaging } from './supabase.js';
 
 const assets = new Map([
   ['/', ['index.html', 'text/html']],
@@ -13,9 +14,12 @@ const assets = new Map([
   ['/demo.js', ['demo.js', 'text/javascript']],
   ['/demo-state.js', ['demo-state.js', 'text/javascript']],
   ['/demo.css', ['demo.css', 'text/css']],
+  ['/messaging.js', ['messaging.js', 'text/javascript']],
+  ['/messaging.css', ['messaging.css', 'text/css']],
   ['/style.css', ['style.css', 'text/css']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {
+  const messaging = createMessaging();
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   const vault = suppliedVault || (redisUrl && redisToken
@@ -36,7 +40,7 @@ export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY,
     if (origin && !allowed) return json(403, { error: 'Origin not allowed.' });
     if (allowed) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
     if (req.method === 'OPTIONS') {
-      res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
+      res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' });
       return res.end();
     }
     try {
@@ -46,16 +50,16 @@ export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY,
         res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8` });
         return res.end(await readFile(new URL(`../extension/${file}`, import.meta.url)));
       }
-      if (req.method === 'GET' && path === '/api/health') return json(200, { ok: Boolean(vault), storage: vault instanceof RedisVault ? 'shared' : vault ? 'memory' : 'unconfigured', aiEnabled: Boolean(apiKey && apiKey !== 'Insert your key') });
+      if (req.method === 'GET' && path === '/api/health') return json(200, { ok: Boolean(vault), storage: vault instanceof RedisVault ? 'shared' : vault ? 'memory' : 'unconfigured', aiEnabled: Boolean(apiKey && apiKey !== 'Insert your key'), messagingEnabled: messaging.enabled });
       if (!['POST', 'DELETE'].includes(req.method)) return json(404, { error: 'Not found.' });
-      if (!vault) return json(503, { error: 'Hosted vault not configured. Connect Upstash Redis in Vercel first.' });
+      if (!vault && !path.startsWith('/api/messaging/')) return json(503, { error: 'Hosted vault not configured. Connect Upstash Redis in Vercel first.' });
       const minute = Math.floor(Date.now() / 60000);
       for (const [key, value] of limits) if (value.minute !== minute) limits.delete(key);
       const address = hosted ? String(req.headers['x-vercel-forwarded-for'] || req.socket.remoteAddress) : req.socket.remoteAddress;
       const limit = limits.get(address) || { minute, count: 0 };
       limits.set(address, limit);
       if (++limit.count > 180) return json(429, { error: 'Too many requests. Try again shortly.' });
-      if (vault.allow && !await vault.allow(address)) return json(429, { error: 'Too many requests. Try again shortly.' });
+      if (vault?.allow && !await vault.allow(address)) return json(429, { error: 'Too many requests. Try again shortly.' });
       if (!req.headers['content-type']?.startsWith('application/json')) return json(415, { error: 'JSON required.' });
       let raw = req.body === undefined ? '' : typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
       if (req.body === undefined) for await (const chunk of req) {
@@ -66,6 +70,11 @@ export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY,
       let body;
       try { body = JSON.parse(raw); } catch { return json(400, { error: 'Invalid JSON.' }); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json(400, { error: 'Invalid request.' });
+      if (path.startsWith('/api/messaging/')) {
+        if (req.method !== 'POST') return json(405, { error: 'Use POST for messaging requests.' });
+        const result = await messaging.handle(path, req.headers.authorization, body);
+        return json(result.status, result.body);
+      }
       if (path === '/api/messages' && req.method === 'POST') {
         try { return json(201, await vault.create(body)); } catch (error) { return json(400, { error: error.message }); }
       }
