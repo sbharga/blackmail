@@ -57,6 +57,14 @@ test('empty-browser Bob/Diana demo reconnects automatically without manual token
   await a.tick();await b.tick();await a.tick();
   assert.equal(phase,'Connected');assert.equal(a.snapshot().remembered,true);assert.equal(b.snapshot().remembered,true);
 });
+test('another tab wake request does not tear down a healthy peer connection', async () => {
+  const store=storage(),secret='ab'.repeat(32);let offers=0;
+  store.setItem('blackmail.peer-link:a:b',JSON.stringify({id:'known',secret,expiresAt:1000+7*24*60*60*1000,confirmed:true}));
+  const packet=await sealSignal({kind:'wake',id:'another-tab',pairId:'known',at:1000},secret);
+  const reconnect=createReconnect({snapshot:()=>({state:'Connected'}),onControl:()=>{},control:async()=>{},offer:async()=>{offers++;return 'unwanted';}},
+    {storage:store,now:()=>1000,request:async()=>({packet})});
+  reconnect.select('a','b');await reconnect.tick();assert.equal(offers,0);
+});
 test('saved links tolerate small clock skew and pairing completes before the responder pong', async () => {
   let receiveA, receiveB; const sa=storage(),sb=storage();
   const a=createReconnect({snapshot:()=>({state:'Connected'}),onControl:fn=>{receiveA=fn;},control:async value=>receiveB(value)},

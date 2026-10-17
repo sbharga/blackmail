@@ -104,7 +104,7 @@ export function createReconnect(session, { request, storage = localStorage, now 
       if (currentRun !== run) return;
       if (value && value.pairId === pair.id && typeof value.id === 'string' && value.at <= now() + 10000 && value.at > now() - 90000 && value.id !== pair.seen) {
         pair.seen = value.id; persist();
-        if (value.kind === 'wake' && leader() && !pending) await offer(target, credential, currentRun);
+        if (value.kind === 'wake' && leader() && !pending && session.snapshot().state !== 'Connected') await offer(target, credential, currentRun);
         else if (value.kind === 'offer' && !leader() && typeof value.token === 'string') {
           wasReady = false;
           const answer = await session.answer(value.token);
