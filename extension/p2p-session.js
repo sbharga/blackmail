@@ -32,7 +32,7 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
     }
     if (packet.type !== 'message' || state !== 'Connected' || packet.session !== remoteSession ||
         typeof packet.text !== 'string' || !packet.text.trim() || packet.text.length > 3000) return;
-    messages.push({ text: packet.text, mine: false }); messages = messages.slice(-100); emit();
+    messages.push({ text: packet.text, mine: false, createdAt: now() }); messages = messages.slice(-100); emit();
   });
   return {
     snapshot, reset, tick,
@@ -71,7 +71,7 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
       const run = generation;
       try { await transport.send_peer_too_peer(envelope('message', { text }), peer); }
       catch (error) { if (run === generation) { state = 'Disconnected'; emit(); } throw error; }
-      if (run === generation) { messages.push({ text, mine: true }); messages = messages.slice(-100); emit(); }
+      if (run === generation) { messages.push({ text, mine: true, createdAt: now() }); messages = messages.slice(-100); emit(); }
     },
   };
 }

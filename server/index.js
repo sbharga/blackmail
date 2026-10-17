@@ -9,6 +9,7 @@ import { createMessaging } from './supabase.js';
 const assets = new Map([
   ['/', ['index.html', 'text/html']],
   ['/index.html', ['index.html', 'text/html']],
+  ['/message-delivery.js', ['message-delivery.js', 'text/javascript']],
   ['/p2p.js', ['p2p.js', 'text/javascript']],
   ['/p2p-session.js', ['p2p-session.js', 'text/javascript']],
   ['/peer-ui.js', ['peer-ui.js', 'text/javascript']],

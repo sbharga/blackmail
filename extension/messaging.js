@@ -1,4 +1,5 @@
 import { setupPeerUI } from './peer-ui.js';
+import { deliverMessage } from './message-delivery.js';
 import { api, serverNow } from './app.js';
 
 const $ = id => document.getElementById(id);
@@ -21,6 +22,7 @@ if (!session?.access_token || !session?.refresh_token || !Number.isFinite(sessio
 let profile = null, contacts = [], selected = null, signup = false, enabled = false;
 let epoch = 0, revision = 0, refreshPromise = null, syncing = false, sending = false, polishing = false;
 let contactsAt = 0, threadFingerprint = '', pendingMessageId = null;
+let aiRevision = -1, formalMessages = [];
 const accountStatus = text => { $('account-status').textContent = text; };
 const inboxStatus = text => { $('inbox-status').textContent = text; };
 function storeSession(value) {
@@ -29,10 +31,11 @@ function storeSession(value) {
   catch { /* In-memory login remains usable when browser storage is unavailable. */ }
 }
 function invalidatePreview() {
-  revision++; pendingMessageId = null;
+  revision++; pendingMessageId = null; aiRevision = -1;
   $('live-preview').classList.add('hidden'); $('live-formal').value = '';
 }
 function clearAccount(message = '') {
+  formalMessages = [];
   peerUI.select(null);
   epoch++; storeSession(null); profile = null; contacts = []; selected = null; contactsAt = 0;
   threadFingerprint = ''; refreshPromise = null;
@@ -107,7 +110,7 @@ async function openInbox() {
 }
 function selectContact(contact) {
   if (sending) { inboxStatus('Finish sending before changing conversation.'); return; }
-  selected = contact; threadFingerprint = ''; peerUI.select(contact);
+  formalMessages = []; selected = contact; threadFingerprint = ''; peerUI.select(contact);
   $('live-contact-name').textContent = contact.display_name;
   $('live-contact-username').textContent = `@${contact.username}`;
   $('live-avatar').textContent = contact.display_name[0]?.toUpperCase() || '?';
@@ -130,23 +133,41 @@ function drawContacts() {
   }
 }
 function drawMessages(messages) {
-  const fingerprint = JSON.stringify(messages);
+  formalMessages = messages;
+  const informal = peerUI.snapshot().messages;
+  const fingerprint = JSON.stringify([messages, informal]);
   if (fingerprint === threadFingerprint) return;
   threadFingerprint = fingerprint;
   const list = $('live-messages'); const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 100;
   list.replaceChildren();
-  if (!messages.length) list.append(node('p', 'empty-inbox', 'No messages yet. Say hello.'));
-  for (const message of messages) {
-    const mine = message.sender_id === profile.id;
+  if (!messages.length && !informal.length) list.append(node('p', 'empty-inbox', 'No messages yet. Say hello.'));
+  const combined = [
+    ...messages.map(message => ({ text: message.body_formal, mine: message.sender_id === profile.id, at: new Date(message.created_at).getTime(), private: false })),
+    ...informal.map(message => ({ text: message.text, mine: message.mine, at: message.createdAt, private: true })),
+  ].sort((a, b) => a.at - b.at);
+  for (const message of combined) {
+    const mine = message.mine;
     const row = node('article', `message-row ${mine ? 'outgoing' : 'incoming'}`);
     const bubble = node('div', 'message-bubble');
-    bubble.append(node('div', 'message-author', mine ? `${profile.display_name} · you` : selected.display_name), node('p', '', message.body_formal));
-    const date = new Date(message.created_at);
-    bubble.append(node('div', 'message-meta', `${date.toLocaleString()} · formal record`));
+    if (message.private) bubble.classList.add('informal-bubble');
+    bubble.append(node('div', 'message-author', mine ? `${profile.display_name} · you` : selected.display_name), node('p', '', message.text));
+    const date = new Date(message.at);
+    bubble.append(node('div', 'message-meta', `${date.toLocaleString()} · ${message.private ? 'Informal (P2P E2EE) · this tab only' : 'Formal record'}`));
     row.append(bubble); list.append(row);
   }
   if (atEnd) list.scrollTop = list.scrollHeight;
 }
+function connected() { const peer = peerUI.snapshot(); return peer.state === 'Connected' && peer.contact === selected?.id; }
+function updateDeliveryMode() {
+  $('delivery-mode').textContent = connected()
+    ? 'Both channels: Nebius prepares the formal record; your original goes directly over P2P.'
+    : 'Formal only. Connect the informal channel to send both versions.';
+  $('live-send').textContent = connected() ? 'Send both versions' : 'Send formal message';
+}
+document.addEventListener('blackmail-peer-change', () => {
+  updateDeliveryMode();
+  if (profile && selected) drawMessages(formalMessages);
+});
 async function sync(forceContacts = false) {
   if (!profile || !session || syncing) return;
   syncing = true;
@@ -179,7 +200,7 @@ $('add-contact-form').addEventListener('submit', async event => {
     contacts = result.contacts; $('contact-username').value = ''; drawContacts();
     const contact = contacts.find(item => item.username === username);
     if (contact) selectContact(contact);
-    inboxStatus('Contact added. Only formal messages are sent from this inbox.');
+    inboxStatus('Contact added. Connect the informal channel to send both versions.');
   } catch (error) { if (started === epoch) inboxStatus(error.message); }
   finally { $('add-contact-submit').disabled = false; }
 });
@@ -189,8 +210,9 @@ $('account-logout').addEventListener('click', async () => {
 });
 $('live-draft').addEventListener('input', invalidatePreview);
 $('live-formal').addEventListener('input', () => { pendingMessageId = null; });
-$('live-review').addEventListener('click', () => {
+$('live-review').addEventListener('click', async () => {
   if (!selected || !$('live-draft').value.trim()) { inboxStatus('Write a draft first.'); return; }
+  if (connected() && aiRevision !== revision) { await polishDraft(); return; }
   if ($('live-preview').classList.contains('hidden')) {
     $('live-formal').value = $('live-draft').value;
     $('live-preview').classList.remove('hidden');
@@ -198,36 +220,49 @@ $('live-review').addEventListener('click', () => {
   }
   $('live-formal').focus();
 });
-$('live-polish').addEventListener('click', async () => {
+async function polishDraft() {
   if (polishing || sending) return;
   const text = $('live-draft').value;
   if (!selected || !text.trim()) { inboxStatus('Write a draft first.'); return; }
   const started = epoch, currentRevision = revision;
-  polishing = true; $('live-polish').disabled = true; inboxStatus('Polishing with Nebius…');
+  polishing = true; $('live-polish').disabled = true; $('live-review').disabled = true; $('live-send').disabled = true; inboxStatus('Polishing with Nebius…');
   try {
     const result = await api('/api/rewrite', { text });
     if (started !== epoch || currentRevision !== revision) return;
-    $('live-formal').value = result.text; pendingMessageId = null;
+    $('live-formal').value = result.text; pendingMessageId = null; aiRevision = currentRevision;
     $('live-preview').classList.remove('hidden'); inboxStatus('Review the formal version before sending.');
   } catch (error) { if (started === epoch) inboxStatus(error.message); }
-  finally { polishing = false; $('live-polish').disabled = !selected || sending; }
-});
+  finally { polishing = false; for (const id of ['live-polish', 'live-review', 'live-send']) $(id).disabled = !selected || sending; }
+}
+$('live-polish').addEventListener('click', polishDraft);
 $('live-cancel').addEventListener('click', () => { invalidatePreview(); inboxStatus('Draft kept.'); });
 $('live-send').addEventListener('click', async () => {
-  if (sending || !selected) return;
+  if (sending || polishing || !selected) return;
+  if (connected() && aiRevision !== revision) { await polishDraft(); return; }
   const formal = $('live-formal').value.trim();
   if (!formal) { inboxStatus('Write the formal version first.'); return; }
   const contact = selected, started = epoch, currentRevision = revision;
+  const dual = connected(), original = $('live-draft').value;
   pendingMessageId ||= crypto.randomUUID();
   const clientMessageId = pendingMessageId;
   sending = true;
   for (const id of ['live-send', 'live-formal', 'live-draft', 'live-review', 'live-polish', 'live-cancel']) $(id).disabled = true;
   inboxStatus('Sending formal message…');
   try {
-    await call('send', { recipientId: contact.id, formal, clientMessageId });
+    const delivery = await deliverMessage({
+      connected: dual, original, formal, aiReady: aiRevision === currentRevision,
+      sendFormal: value => call('send', { recipientId: contact.id, formal: value, clientMessageId }),
+      sendOriginal: value => {
+        if (started !== epoch || selected?.id !== contact.id || !connected()) throw new Error('Informal connection closed.');
+        return peerUI.send(value);
+      },
+    });
     if (started !== epoch) return;
     if (currentRevision === revision && selected?.id === contact.id) { $('live-draft').value = ''; invalidatePreview(); }
-    inboxStatus(`Formal message delivered to ${contact.display_name}.`);
+    inboxStatus(delivery.privateError
+      ? `Formal delivered. Original was NOT sent: ${delivery.privateError}`
+      : delivery.informal ? `Formal delivered to ${contact.display_name}; original sent over P2P.`
+      : `Formal delivered to ${contact.display_name}. No informal message sent.`);
     threadFingerprint = ''; await sync(true);
     $('live-messages').scrollTop = $('live-messages').scrollHeight;
   } catch (error) { if (started === epoch) inboxStatus(`${error.message} Retry safely; the same message won’t be duplicated.`); }
