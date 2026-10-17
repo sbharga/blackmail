@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlackMail — Design Preview</title>
+<style>
+/* ============================================================
+   BlackMail — sleek redesign preview
+   Base: near-black  ·  Accent: Signal blue
+   Static mockup only. Does not touch or replace app code.
+   ============================================================ */
+:root{
+  --bg:#09090b;          /* page base */
+  --bg-2:#0e0f12;        /* raised panels */
+  --bg-3:#15171c;        /* cards */
+  --line:#1f232b;        /* hairlines */
+  --line-2:#2a2f39;      /* stronger borders */
+  --txt:#f4f5f7;         /* primary text */
+  --txt-2:#a7acb6;       /* secondary */
+  --txt-3:#6c717c;       /* muted / meta */
+  --blue:#3b82f6;        /* signal blue accent */
+  --blue-bright:#5b9bff;
+  --blue-dim:#1d3a6b;
+  --blue-glow:rgba(59,130,246,.18);
+  --radius:16px;
+  --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  background-image:
+    radial-gradient(900px 500px at 82% -8%,var(--blue-glow),transparent 60%),
+    radial-gradient(700px 420px at -5% 12%,rgba(59,130,246,.07),transparent 55%);
+  background-attachment:fixed;
+}
+::selection{background:var(--blue);color:#fff}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(20px,5vw,56px);height:72px;
+  border-bottom:1px solid var(--line);
+  background:rgba(9,9,11,.72);backdrop-filter:blur(14px);
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:18px;letter-spacing:-.3px;text-decoration:none;color:inherit}
+.logo{
+  width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+  font-size:22px;font-weight:800;color:#fff;
+  background:linear-gradient(145deg,#1b1d22,#0c0d0f);
+  border:1px solid var(--line-2);box-shadow:0 0 0 1px #000 inset,0 6px 18px rgba(0,0,0,.5);
+}
+.logo b{color:var(--blue-bright)}
+.beta{font:9px/1 var(--mono);letter-spacing:1.5px;color:var(--blue);border:1px solid var(--blue-dim);padding:5px 7px;border-radius:5px;margin-left:4px}
+.conn{display:flex;align-items:center;gap:8px;font:11px/1 var(--mono);color:var(--txt-3)}
+.dot{width:7px;height:7px;border-radius:50%;background:#2ec27e;box-shadow:0 0 0 3px rgba(46,194,126,.15)}
+
+/* ---------- layout ---------- */
+main{max-width:1120px;margin:0 auto;padding:clamp(40px,7vw,84px) clamp(20px,5vw,40px) 60px}
+
+/* ---------- hero ---------- */
+.eyebrow{font:10px/1 var(--mono);letter-spacing:2.5px;color:var(--blue);margin-bottom:22px}
+h1{font-size:clamp(40px,6.4vw,72px);line-height:1.02;letter-spacing:-3px;font-weight:650;margin:0}
+h1 .fade{color:var(--txt-3)}
+h1 .mark{color:var(--blue-bright);position:relative}
+.intro{font-size:16px;color:var(--txt-2);margin:22px 0 0;max-width:460px}
+
+/* ---------- tabs ---------- */
+nav{display:flex;gap:4px;margin:46px 0 30px;padding:5px;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;width:fit-content;max-width:100%;overflow:auto}
+.tab{
+  display:flex;align-items:center;gap:9px;white-space:nowrap;
+  background:none;border:0;cursor:pointer;color:var(--txt-3);
+  font:12px/1 var(--sans);font-weight:600;letter-spacing:.2px;
+  padding:11px 16px;border-radius:8px;transition:.18s;
+}
+.tab .num{font:9px/1 var(--mono);color:var(--txt-3);opacity:.7}
+.tab:hover{color:var(--txt-2)}
+.tab.active{background:var(--bg-3);color:var(--txt);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 4px 14px rgba(0,0,0,.4)}
+.tab.active .num{color:var(--blue)}
+
+.panel{display:none;animation:rise .35s ease both}
+.panel.show{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- cards / columns ---------- */
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{
+  position:relative;background:var(--bg-3);border:1px solid var(--line);
+  border-radius:var(--radius);padding:26px;overflow:hidden;
+}
+.card.private{
+  background:linear-gradient(180deg,rgba(59,130,246,.07),transparent 70%),var(--bg-3);
+  border-color:var(--blue-dim);
+}
+.card.private::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(var(--blue),transparent)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.badge{font:9px/1 var(--mono);letter-spacing:1.4px;color:var(--txt-3);display:flex;align-items:center;gap:7px}
+.badge::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--line-2)}
+.private .badge{color:var(--blue-bright)}
+.private .badge::before{background:var(--blue)}
+.symbol{color:var(--txt-3);font-size:18px}
+.card h2{font-size:24px;letter-spacing:-.8px;font-weight:600;margin:0 0 6px}
+.card .sub{font-size:13px;color:var(--txt-2);margin:0}
+label{display:block;font:9px/1 var(--mono);letter-spacing:1px;color:var(--txt-3);margin:24px 0 10px;text-transform:uppercase}
+textarea,.fauxarea{
+  width:100%;min-height:150px;resize:vertical;
+  background:var(--bg);border:1px solid var(--line-2);border-radius:11px;
+  padding:15px 16px;color:var(--txt);font:14.5px/1.7 var(--sans);
+}
+.fauxarea{min-height:auto}
+.fauxarea .ghost{color:var(--txt-3)}
+textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+textarea::placeholder{color:var(--txt-3)}
+.card-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font:10px/1 var(--mono);color:var(--txt-3)}
+
+/* ---------- buttons ---------- */
+.btn{cursor:pointer;font:inherit;border-radius:9px;transition:.16s;font-weight:600;border:1px solid transparent}
+.btn-sm{font-size:11.5px;padding:8px 12px;background:transparent;color:var(--blue-bright);border-color:var(--line-2)}
+.btn-sm:hover{border-color:var(--blue);background:var(--blue-glow)}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:14px;
+  font-size:13px;padding:14px 22px;color:#061225;
+  background:linear-gradient(180deg,var(--blue-bright),var(--blue));
+  box-shadow:0 8px 24px rgba(59,130,246,.3),0 1px 0 rgba(255,255,255,.25) inset;
+}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-primary .arr{font-size:15px}
+.btn-ghost{font-size:13px;padding:13px 20px;background:var(--bg-3);color:var(--txt);border-color:var(--line-2)}
+.btn-ghost:hover{border-color:var(--txt-3)}
+
+.provider-note{font:10px/1.6 var(--mono);color:var(--txt-3);margin:16px 2px 0}
+
+/* ---------- send bar ---------- */
+.send-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  margin-top:26px;padding:22px 24px;border-radius:var(--radius);
+  background:var(--bg-2);border:1px solid var(--line);
+}
+.send-bar strong{font-size:14px;display:block}
+.send-bar p{font-size:12px;color:var(--txt-2);margin:4px 0 0}
+.send-bar .timer{color:var(--blue-bright);font-family:var(--mono)}
+
+/* ---------- result (pass created) ---------- */
+.result{
+  margin-top:18px;padding:26px;border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(59,130,246,.06),transparent),var(--bg-3);
+  border:1px solid var(--blue-dim);
+}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.result h3{font-size:18px;margin:0;letter-spacing:-.4px}
+.pill{font:10px/1 var(--mono);background:var(--bg);border:1px solid var(--line-2);color:var(--blue-bright);padding:7px 11px;border-radius:6px;white-space:nowrap}
+.result p{font-size:13px;color:var(--txt-2);margin:10px 0 0}
+.passbox{
+  margin-top:16px;background:var(--bg);border:1px solid var(--line-2);border-radius:11px;
+  padding:16px;font:12.5px/1.7 var(--mono);color:var(--blue-bright);word-break:break-all;
+}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+/* ---------- receive / opened ---------- */
+.receiver{max-width:760px}
+.opened{margin-top:26px;padding-top:24px;border-top:1px solid var(--line)}
+.plaintext{font-size:20px;line-height:1.65;color:var(--txt);white-space:pre-wrap;padding:16px 0}
+.watchbar{display:flex;align-items:center;gap:9px;font:10px/1 var(--mono);color:var(--txt-3);margin-bottom:6px}
+.watchbar .dot{background:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+
+/* ---------- history ---------- */
+.section-title h2{font-size:26px;letter-spacing:-1px;margin:0 0 6px}
+.section-title p{font-size:13px;color:var(--txt-2);margin:0 0 24px}
+.hist{background:var(--bg-3);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.hist .body p{margin:0 0 10px;font-size:14px;color:var(--txt);white-space:pre-wrap}
+.hist .meta{font:10px/1.4 var(--mono);color:var(--txt-3)}
+.hist .status-live{color:#2ec27e}
+.hist .status-revoked{color:#6c717c;text-decoration:line-through}
+.hist .btn-sm{color:#ff7a7a;border-color:#3a2326}
+.hist .btn-sm:hover{background:rgba(255,80,80,.1);border-color:#ff7a7a}
+
+/* ---------- status + footer ---------- */
+#status{min-height:20px;font:12px/1.6 var(--mono);color:var(--blue-bright);margin:22px 2px 0}
+footer{
+  display:flex;justify-content:space-between;gap:24px;align-items:flex-start;
+  margin-top:54px;padding-top:24px;border-top:1px solid var(--line);
+  color:var(--txt-3);font-size:11px;line-height:1.7;
+}
+footer .tag{font:9px/1 var(--mono);letter-spacing:1.5px;white-space:nowrap}
+footer p{margin:0;max-width:440px;text-align:right}
+
+/* preview chrome note */
+.previewnote{position:fixed;left:16px;bottom:16px;z-index:40;font:10px/1.5 var(--mono);color:var(--txt-3);background:rgba(14,15,18,.9);border:1px solid var(--line);border-radius:8px;padding:9px 12px;backdrop-filter:blur(8px);max-width:260px}
+.previewnote b{color:var(--blue-bright)}
+
+@media(max-width:760px){
+  .columns{grid-template-columns:1fr}
+  .send-bar{flex-direction:column;align-items:flex-start}
+  footer{flex-direction:column}
+  footer p{text-align:left}
+  .beta{display:none}
+  h1{letter-spacing:-1.5px}
+  .previewnote{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="#"><span class="logo"><b>b</b>.</span> BlackMail <span class="beta">DESIGN PREVIEW</span></a>
+  <span class="conn"><span class="dot"></span> Connected · shared vault</span>
+</header>
+
+<main>
+  <div class="eyebrow">FOR THE RECORD. AND OFF IT.</div>
+  <h1>One message.<br><span class="fade">Two sides</span> <span class="mark">of you.</span></h1>
+  <p class="intro">Keep it professional out there. Be yourself in here. Compose once, deliver the formal version anywhere, and keep your real voice behind a pass that expires.</p>
+
+  <nav aria-label="Workspace">
+    <button class="tab active" data-tab="compose"><span class="num">01</span> Compose</button>
+    <button class="tab" data-tab="receive"><span class="num">02</span> Open a pass</button>
+    <button class="tab" data-tab="sent"><span class="num">03</span> Your passes</button>
+  </nav>
+
+  <!-- ========== COMPOSE ========== -->
+  <section class="panel show" id="compose">
+    <div class="columns">
+      <article class="card private">
+        <div class="card-head"><span class="badge">PRIVATE CHANNEL</span><span class="symbol">↗</span></div>
+        <h2>The real you.</h2>
+        <p class="sub">Encrypted in your browser. Only shared through a BlackMail pass.</p>
+        <label for="original">Original message</label>
+        <textarea id="original">bro these numbers are wrong 😭 can you redo the totals before we send it out</textarea>
+        <div class="card-bottom"><span>67 / 12,000</span><button class="btn btn-sm">Polish with AI ↗</button></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><span class="badge">PUBLIC CHANNEL</span><span class="symbol">↗</span></div>
+        <h2>For the record.</h2>
+        <p class="sub">This is what you send through your usual app.</p>
+        <label for="formal">Formal message · review before sharing</label>
+        <textarea id="formal">The figures appear to be incorrect. Could you please recalculate the totals before we send the report?</textarea>
+        <div class="card-bottom"><span>Always editable</span><button class="btn btn-sm">Copy formal ↗</button></div>
+      </article>
+    </div>
+
+    <p class="provider-note">AI rewrite sends your draft to Nebius. Manual editing works without an API key.</p>
+
+    <div class="send-bar">
+      <div>
+        <strong>A little trust. A short window.</strong>
+        <p>Original encrypted in your browser · pass expires in <span class="timer">4:58</span></p>
+      </div>
+      <button class="btn btn-primary" id="seal">Create private pass <span class="arr">↗</span></button>
+    </div>
+
+    <div class="result" id="created" style="display:none">
+      <div class="result-head"><h3>Your private pass is ready.</h3><span class="pill">expires 4:58</span></div>
+      <p>Send the formal version through your app. Share this pass separately with your recipient.</p>
+      <label>Recipient pass · anyone holding it can open the original</label>
+      <div class="passbox">bm1.aGVsbG8d9f.cap_7Q2xZ.k3y_nF8pL2vR9tWmA6sD1gH4jK7bN0cE5xQ</div>
+      <div class="actions">
+        <button class="btn btn-primary">Copy pass <span class="arr">↗</span></button>
+        <button class="btn btn-ghost">Preview recipient view</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== RECEIVE ========== -->
+  <section class="panel" id="receive">
+    <article class="card receiver">
+      <div class="card-head"><span class="badge">JUST BETWEEN YOU</span><span class="symbol">↗</span></div>
+      <h2>Got the other half?</h2>
+      <p class="sub">Paste a BlackMail pass. Valid for five minutes from creation.</p>
+      <label for="incoming">Private pass</label>
+      <textarea id="incoming" style="min-height:90px;font:12.5px/1.6 var(--mono);color:var(--blue-bright)">bm1.aGVsbG8d9f.cap_7Q2xZ.k3y_nF8pL2vR9tWmA6sD1gH4jK7bN0cE5xQ</textarea>
+      <div style="margin-top:18px"><button class="btn btn-primary">Unlock original <span class="arr">↗</span></button></div>
+
+      <div class="opened">
+        <div class="watchbar"><span class="dot"></span> LIVE · access re-checked every 3s · clears on expiry or tab hide</div>
+        <div class="result-head"><span class="badge" style="color:var(--blue-bright)">ORIGINAL MESSAGE</span><span class="pill">read window 3:41</span></div>
+        <p class="plaintext">bro these numbers are wrong 😭 can you redo the totals before we send it out</p>
+        <button class="btn btn-ghost">Close original</button>
+      </div>
+    </article>
+  </section>
+
+  <!-- ========== SENT ========== -->
+  <section class="panel" id="sent">
+    <div class="section-title">
+      <h2>Your passes.</h2>
+      <p>Local history on this browser. Formal copies stay wherever you sent them.</p>
+    </div>
+
+    <div class="hist">
+      <div class="body">
+        <p>The figures appear to be incorrect. Could you please recalculate the totals before we send the report?</p>
+        <span class="meta">created 2:04 PM · <span class="status-live">● active · expires in 3:41</span></span>
+      </div>
+      <button class="btn btn-sm">Revoke original</button>
+    </div>
+
+    <div class="hist">
+      <div class="body">
+        <p>Thanks for the update — I'll have the revised deck over to you by end of day.</p>
+        <span class="meta">created 11:17 AM · <span class="status-revoked">revoked</span></span>
+      </div>
+      <button class="btn btn-sm" disabled style="opacity:.4">Revoked</button>
+    </div>
+
+    <div class="hist">
+      <div class="body">
+        <p>Appreciate the quick turnaround on the contract redlines. Looks good to proceed.</p>
+        <span class="meta">created yesterday · <span class="status-revoked">expired</span></span>
+      </div>
+      <button class="btn btn-sm" disabled style="opacity:.4">Expired</button>
+    </div>
+  </section>
+
+  <p id="status">● Vault connected · AES-256-GCM · originals never leave your browser unencrypted</p>
+
+  <footer>
+    <span class="tag">BLACKMAIL / SAY IT YOUR WAY</span>
+    <p>Passes limit future access. They cannot undo screenshots, copying, or messages already read.</p>
+  </footer>
+</main>
+
+<div class="previewnote">
+  <b>Static design preview.</b> Black + Signal-blue redesign of the real screens. Tabs and the “Create private pass” button are clickable. No backend — app code untouched.
+</div>
+
+<script>
+// ---- tab switching (preview only) ----
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('active'));
+  panels.forEach(p=>p.classList.remove('show'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('show');
+}));
+// ---- reveal the "pass created" result ----
+document.getElementById('seal').addEventListener('click',()=>{
+  const r=document.getElementById('created');
+  r.style.display='block';
+  r.scrollIntoView({behavior:'smooth',block:'nearest'});
+});
+</script>
+</body>
+</html>
