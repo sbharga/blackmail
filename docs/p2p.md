@@ -1,11 +1,13 @@
 # Informal P2P channel
 
-In **Messages**, sign in and select a contact. Open **Informal channel**.
+In **Messages**, sign in and select a contact. Open **Informal setup**.
 
 1. Alice creates an offer and shares the token with Bob through a trusted channel.
 2. Bob selects Alice, pastes her offer, clicks **Answer pasted offer**, and shares his answer.
 3. Alice pastes Bob's answer and clicks **Apply pasted answer**. Keep both tabs open until both show Connected.
-4. Use the separate informal composer. Formal review/send continues through Supabase independently.
+4. Write in the single message composer. Connected: **Review formal** automatically calls Nebius; review/edit its output, then **Send both versions**. The approved formal text goes to Supabase first, and the original goes over P2P. Disconnected: review/send formal only; AI is optional.
+
+Setup has no separate informal composer. Both message types appear in the same conversation with channel labels. AI must succeed for the current draft before a connected dual send; failures leave the draft for review/retry. If the private channel drops after formal delivery, the UI reports that only formal succeeded, without automatically resending the formal record. Connection state is checked when Send is clicked.
 
 The supplied `src/utils/p2p.ts` is unchanged. TypeScript compiles it to `extension/p2p.js` for the dependency-free browser client. Install build tools with `npm ci`; `npm start` and `npm run build` compile automatically. Run `npm run typecheck`, `npm run test:p2p`, and `npm test`.
 
