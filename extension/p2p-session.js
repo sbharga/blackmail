@@ -37,7 +37,8 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
     }
     if (packet.type !== 'message' || state !== 'Connected' || packet.session !== remoteSession ||
         typeof packet.text !== 'string' || !packet.text.trim() || packet.text.length > 3000) return;
-    messages.push({ text: packet.text, mine: false, createdAt: now() }); messages = messages.slice(-100); emit();
+    const messageId = typeof packet.formalId === 'string' && /^[a-f0-9-]{36}$/i.test(packet.formalId) ? packet.formalId : null;
+    messages.push({ text: packet.text, mine: false, createdAt: now(), messageId }); messages = messages.slice(-100); emit();
   });
   return {
     snapshot, reset, tick,
@@ -75,13 +76,13 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
         peer = id; await tick();
       } catch (error) { if (run === generation) { state = 'Disconnected'; emit(); } throw error; }
     },
-    async send(text) {
+    async send(text, messageId = null) {
       if (!peer || state !== 'Connected') throw new Error('Complete the P2P handshake with this contact first.');
       if (!text.trim() || text.length > 3000) throw new Error('Write an informal message of 1–3,000 characters.');
       const run = generation;
-      try { await transport.send_peer_too_peer(envelope('message', { text }), peer); }
+      try { await transport.send_peer_too_peer(envelope('message', { text, formalId: messageId }), peer); }
       catch (error) { if (run === generation) { state = 'Disconnected'; emit(); } throw error; }
-      if (run === generation) { messages.push({ text, mine: true, createdAt: now() }); messages = messages.slice(-100); emit(); }
+      if (run === generation) { messages.push({ text, mine: true, createdAt: now(), messageId }); messages = messages.slice(-100); emit(); }
     },
   };
 }

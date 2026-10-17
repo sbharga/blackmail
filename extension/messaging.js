@@ -1,5 +1,6 @@
 import { setupPeerUI } from './peer-ui.js';
 import { deliverMessage } from './message-delivery.js';
+import { messageView } from './message-view.js';
 import { api, serverNow } from './app.js';
 
 const $ = id => document.getElementById(id);
@@ -23,6 +24,7 @@ let profile = null, contacts = [], selected = null, signup = false, enabled = fa
 let epoch = 0, revision = 0, refreshPromise = null, syncing = false, sending = false, polishing = false;
 let contactsAt = 0, threadFingerprint = '', pendingMessageId = null;
 let aiRevision = -1, formalMessages = [];
+let reading = 'formal';
 let syncAgain = false;
 const accountStatus = text => { $('account-status').textContent = text; };
 const inboxStatus = text => { $('inbox-status').textContent = text; };
@@ -97,30 +99,49 @@ $('account-form').addEventListener('submit', async event => {
     });
     if (started !== epoch) return;
     if (result.needsConfirmation) { mode(false); accountStatus('Check your email to confirm your account, then sign in here.'); return; }
-    storeSession(result.session); await openInbox();
+    storeSession(result.session); await openInbox(false);
   } catch (error) { if (started === epoch) accountStatus(error.message); }
   finally { $('account-password').value = ''; $('account-submit').disabled = !enabled; }
 });
-async function openInbox() {
+async function openInbox(restore = true) {
   const started = epoch;
   const result = await call('me');
   if (started !== epoch) return;
   profile = result.profile;
   peerUI.account(profile.id, call);
   $('account-identity').textContent = `${profile.display_name} · @${profile.username}`;
+  $('account-avatar').textContent = profile.display_name[0]?.toUpperCase() || '?';
+  $('welcome-name').textContent = profile.display_name;
+  showOverview();
   $('account-gate').classList.add('hidden'); $('live-inbox').classList.remove('hidden');
   contactsAt = 0; await sync(true);
   if (started !== epoch) return;
   try {
     const previous = sessionStorage.getItem(`blackmail.selected:${profile.id}`);
     const contact = contacts.find(item => item.id === previous);
-    if (contact) selectContact(contact);
+    if (restore && contact) selectContact(contact);
+    else if (!restore) sessionStorage.removeItem(`blackmail.selected:${profile.id}`);
   } catch { /* Contact selection remains usable without storage. */ }
 }
+function showOverview() {
+  if (sending) return;
+  selected = null; formalMessages = []; threadFingerprint = '';
+  document.querySelector('.live-chat .chat-main').classList.add('welcome-mode');
+  $('live-draft').value = ''; $('live-draft').disabled = true; $('live-review').disabled = true;
+  invalidatePreview(); drawContacts(); inboxStatus('');
+}
+$('inbox-home').addEventListener('click', () => {
+  if (sending) return;
+  showOverview();
+  try { sessionStorage.removeItem(`blackmail.selected:${profile.id}`); } catch {}
+});
+$('welcome-add').addEventListener('click', () => $('contact-username').focus());
 function selectContact(contact) {
   if (selected?.id === contact.id) return;
   if (sending) { inboxStatus('Finish sending before changing conversation.'); return; }
-  formalMessages = []; selected = contact; threadFingerprint = ''; peerUI.select(contact);
+  formalMessages = []; selected = contact; threadFingerprint = '';
+  document.querySelector('.live-chat .chat-main').classList.remove('welcome-mode');
+  if (peerUI.snapshot().contact !== contact.id) peerUI.select(contact);
   try { sessionStorage.setItem(`blackmail.selected:${profile.id}`, contact.id); } catch {}
   $('live-contact-name').textContent = contact.display_name;
   $('live-contact-username').textContent = `@${contact.username}`;
@@ -131,6 +152,8 @@ function selectContact(contact) {
   drawContacts(); inboxStatus(''); sync(true);
 }
 function drawContacts() {
+  $('welcome-contacts').textContent = contacts.length ? `${contacts.length} ${contacts.length === 1 ? 'contact' : 'contacts'} ready to chat` : 'Add your first contact to start';
+  $('inbox-home').classList.toggle('selected', !selected);
   const list = $('live-contacts'); list.replaceChildren();
   if (!contacts.length) list.append(node('p', 'messaging-note', 'Add a teammate by their exact username.'));
   for (const contact of contacts) {
@@ -146,28 +169,44 @@ function drawContacts() {
 function drawMessages(messages) {
   formalMessages = messages;
   const informal = peerUI.snapshot().messages;
-  const fingerprint = JSON.stringify([messages, informal]);
+  const fingerprint = JSON.stringify([messages, informal, reading]);
   if (fingerprint === threadFingerprint) return;
   threadFingerprint = fingerprint;
   const list = $('live-messages'); const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 100;
   list.replaceChildren();
-  if (!messages.length && !informal.length) list.append(node('p', 'empty-inbox', 'No messages yet. Say hello.'));
-  const combined = [
-    ...messages.map(message => ({ text: message.body_formal, mine: message.sender_id === profile.id, at: new Date(message.created_at).getTime(), private: false })),
-    ...informal.map(message => ({ text: message.text, mine: message.mine, at: message.createdAt, private: true })),
-  ].sort((a, b) => a.at - b.at);
+  const combined = messageView(messages, informal, profile.id, reading);
+  if (!combined.length) list.append(node('p', 'empty-inbox', 'No messages yet. Say hello.'));
+  let day = '';
   for (const message of combined) {
+    const date = new Date(message.at), dateKey = date.toDateString();
+    if (dateKey !== day) {
+      day = dateKey;
+      const today = new Date(serverNow()), yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+      const label = dateKey === today.toDateString() ? 'Today' : dateKey === yesterday.toDateString() ? 'Yesterday' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      list.append(node('div', 'conversation-day', label));
+    }
     const mine = message.mine;
     const row = node('article', `message-row ${mine ? 'outgoing' : 'incoming'}`);
     const bubble = node('div', 'message-bubble');
     if (message.private) bubble.classList.add('informal-bubble');
-    bubble.append(node('div', 'message-author', mine ? `${profile.display_name} · you` : selected.display_name), node('p', '', message.text));
-    const date = new Date(message.at);
-    bubble.append(node('div', 'message-meta', `${date.toLocaleString()} · ${message.private ? 'Informal (P2P E2EE) · this tab only' : 'Formal record'}`));
+    if (!mine) bubble.append(node('div', 'message-author', selected.display_name));
+    if (message.private) bubble.append(node('div', 'original-label', 'Original'));
+    bubble.append(node('p', '', message.text));
     row.append(bubble); list.append(row);
   }
   if (atEnd) list.scrollTop = list.scrollHeight;
 }
+function setReading(value) {
+  reading = value;
+  $('reading-formal').setAttribute('aria-pressed', String(value === 'formal'));
+  $('reading-blackmail').setAttribute('aria-pressed', String(value === 'blackmail'));
+  document.querySelector('.live-chat').classList.toggle('blackmail-view', value === 'blackmail');
+  $('reading-note').textContent = value === 'blackmail' ? 'Originals where available. Formal record otherwise; originals clear on refresh.' : '';
+  $('reading-note').classList.toggle('hidden', value !== 'blackmail');
+  threadFingerprint = ''; if (profile && selected) drawMessages(formalMessages);
+}
+$('reading-formal').addEventListener('click', () => setReading('formal'));
+$('reading-blackmail').addEventListener('click', () => setReading('blackmail'));
 function connected() { const peer = peerUI.snapshot(); return peer.state === 'Connected' && peer.contact === selected?.id; }
 function updateDeliveryMode() {
   $('delivery-mode').textContent = connected()
@@ -270,7 +309,7 @@ $('live-send').addEventListener('click', async () => {
       sendFormal: value => call('send', { recipientId: contact.id, formal: value, clientMessageId }),
       sendOriginal: value => {
         if (started !== epoch || selected?.id !== contact.id || !connected()) throw new Error('Informal connection closed.');
-        return peerUI.send(value);
+        return peerUI.send(value, clientMessageId);
       },
     });
     if (started !== epoch) return;

@@ -9,6 +9,8 @@ In **Messages**, sign in and select a contact. Open **Informal setup**.
 
 Setup has no separate informal composer. Both message types appear in the same conversation with channel labels. AI must succeed for the current draft before a connected dual send; failures leave the draft for review/retry. If the private channel drops after formal delivery, the UI reports that only formal succeeded, without automatically resending the formal record. Connection state is checked when Send is clicked.
 
+The header's **Formal / BlackMail** toggle changes the reading view. Formal shows durable formal messages only. BlackMail substitutes the matching P2P original when available, using the formal copy otherwise; it does not send anything or change delivery policy. Originals arriving before the next formal poll appear immediately in BlackMail view, then merge into one bubble. Refresh removes these originals and leaves the formal fallback. Messages have day separators rather than individual timestamps. Fresh password sign-in opens **Overview**; refresh restores the selected conversation and its remembered connection. Overview remains accessible in the sidebar.
+
 ## Remembered connections
 
 After the initial manual connection, the peers exchange a random reconnect credential over their encrypted DataChannel and acknowledge it. Each browser remembers it for seven days, scoped to the signed-in account and contact. This credential is stored in localStorage; informal message text is never persisted there. Clearing browser data or using another browser requires a fresh manual pairing. **Forget remembered link** removes this browser's credential.
