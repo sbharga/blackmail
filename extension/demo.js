@@ -44,7 +44,7 @@ function renderSidebar() {
     const meta = el('span', 'meta');
     const row1 = el('span', 'row1'); row1.append(el('span', 'cname', conv.title), el('span', 'ctime', last ? fmtLeft(last.expiresAt) : ''));
     const prev = el('span', 'cprev');
-    prev.append(el('span', 'lk', '🔒'), el('span', '', last ? last.formal : 'No messages yet'));
+    prev.append(el('span', '', last ? last.formal : 'No messages yet'));
     meta.append(row1, prev);
     btn.append(av, meta);
     btn.addEventListener('click', () => { current = conv; revealed = false; $('chat-draft').value = ''; closePreview(); notice(''); render(); });
@@ -92,30 +92,25 @@ function renderBubble(m) {
   let text = m.formal, showOrig = false;
   if (revealed) {
     if (dead) { text = m.formal; }
-    else if (!canView(m)) { text = `🔒 ${m.author} hasn’t shared the original yet — only the formal version is on the record.`; }
+    else if (!canView(m)) { text = `${m.author} hasn’t shared the original yet.`; }
     else if (m.vault) {
       const cached = plainCache.get(m.id);
       if (cached?.text !== undefined) { text = cached.text; showOrig = true; }
       else if (cached?.dead) { text = m.formal; }
-      else { text = 'Unlocking from the vault…'; if (!cached?.loading) unlock(m); }
+      else { text = 'Unlocking…'; if (!cached?.loading) unlock(m); }
     } else { text = m.original ?? m.formal; showOrig = true; }
   }
 
-  if (showOrig) bubble.append(el('span', 'orig-label', '🔓 Original voice'));
+  if (showOrig) bubble.append(el('span', 'orig-label', 'Original voice'));
   bubble.append(el('div', 'btext', text));
 
   if (revealed && canView(m) && !dead) {
-    if (showOrig) bubble.append(el('span', 'expirychip', `⏱ auto-locks in ${fmtLeft(m.expiresAt)}`));
+    if (showOrig) bubble.append(el('span', 'expirychip', `auto-locks in ${fmtLeft(m.expiresAt)}`));
   } else if (revealed && dead) {
-    bubble.append(el('span', 'deadnote', `🔒 original ${m.revoked ? 'revoked' : 'expired'} · only the formal record remains`));
-  } else if (!revealed && m.vault) {
-    bubble.append(el('span', 'lockchip', '🔒 original sealed to the vault · flip to Original'));
-  } else if (!revealed) {
-    bubble.append(el('span', 'lockchip', '🔒 formal record · stays after revocation'));
+    bubble.append(el('span', 'deadnote', `original ${m.revoked ? 'revoked' : 'expired'} · only the formal record remains`));
   }
 
   const stamp = el('div', 'stamp');
-  stamp.append(el('span', '', m.vault ? 'sealed to vault' : 'demo sample'));
   if (outgoing && !m.revoked && m.expiresAt > serverNow()) {
     if (!m.shared && current.kind !== 'group') {
       const share = el('button', 'inline-action', 'Share pass');
@@ -126,7 +121,8 @@ function renderBubble(m) {
     rev.addEventListener('click', () => revokeMessage(m));
     stamp.append(rev);
   }
-  wrap.append(bubble, stamp);
+  wrap.append(bubble);
+  if (stamp.childNodes.length) wrap.append(stamp);
   return wrap;
 }
 
