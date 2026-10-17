@@ -12,6 +12,7 @@ let polling = false;
 let creating = false;
 let serverOffset = 0;
 const serverNow = () => Date.now() + serverOffset;
+export { api, serverNow };
 let history;
 try { history = JSON.parse(localStorage.getItem('blackmail.sent') || '[]'); if (!Array.isArray(history)) history = []; } catch { history = []; }
 const status = text => { $('status').textContent = text; };
