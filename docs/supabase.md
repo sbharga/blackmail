@@ -2,6 +2,8 @@
 
 Branch: `supabase-messaging`. Adds real BlackMail accounts and a formal inbox; not Gmail/Slack sending.
 
+Preview: https://blackmail-eai-2026-git-supabase-messaging-tien-cb97.vercel.app
+
 1. Create a Supabase Free project. Enable Data API; keep email confirmation enabled.
 2. Run `supabase/migrations/202610170001_formal_messaging.sql` once in SQL Editor.
 3. Run `supabase/tests/rls.sql`. Expect “RLS checks passed”; fixtures roll back.
@@ -17,6 +19,6 @@ Branch: `supabase-messaging`. Adds real BlackMail accounts and a formal inbox; n
 - Sessions persist in per-tab `sessionStorage` and refresh automatically. Sign-out clears the tab’s tokens and conversation. Closing the tab ends local persistence.
 - New messages poll every three seconds while the inbox is visible; contacts refresh periodically. Latest 100 messages are shown. Email delivery is handled by Supabase Auth; production use needs a suitable SMTP configuration.
 - Usernames are discoverable by exact lookup. Adding a contact is one-way; there is no mutual acceptance or block/report flow yet.
-- Email confirmation, actual two-account login, deployed delivery, and live RLS checks must be verified against the provisioned project. `npm test` covers the API adapter with mocked upstream responses; it does not replace database tests.
+- Live RLS tests passed on the provisioned project, including two-way delivery, duplicate protection, sender spoof rejection, and third-party isolation. Fixtures rolled back. Actual two-account email confirmation/login still requires a browser check. `npm test` covers the API adapter with mocked upstream responses; it does not replace database tests.
 
 Keep this branch isolated until reviewed. Its Git push should create a Vercel Preview; do not merge into `main` merely to test it.

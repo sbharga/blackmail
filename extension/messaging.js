@@ -216,7 +216,7 @@ $('live-send').addEventListener('click', async () => {
     await call('send', { recipientId: contact.id, formal, clientMessageId });
     if (started !== epoch) return;
     if (currentRevision === revision && selected?.id === contact.id) { $('live-draft').value = ''; invalidatePreview(); }
-    inboxStatus(`Delivered to ${contact.display_name}. Private draft was not sent.`);
+    inboxStatus(`Formal message delivered to ${contact.display_name}.`);
     threadFingerprint = ''; await sync(true);
     $('live-messages').scrollTop = $('live-messages').scrollHeight;
   } catch (error) { if (started === epoch) inboxStatus(`${error.message} Retry safely; the same message won’t be duplicated.`); }

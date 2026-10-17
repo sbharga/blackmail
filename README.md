@@ -27,7 +27,7 @@ flowchart LR
     V -->|Valid short-lived pass| P["Bob: companion conversation"]
 ```
 
-Target: an extension companion panel aligned with the platform thread, bidirectional replies, authenticated contacts, and recipient-bound passes. Current MVP uses copy/paste; there are no direct platform integrations or real chat accounts. Browser extensions target web apps, not native mobile apps.
+Target: an extension companion panel aligned with the platform thread and recipient-bound private passes. This branch adds real BlackMail accounts, contacts, and formal replies. External messaging platforms still use copy/paste. Browser extensions target web apps, not native mobile apps.
 
 ## Run locally
 
@@ -40,7 +40,7 @@ npm test
 
 Open http://127.0.0.1:8787. For local AI, copy `.env.example` to `.env` and add `NEBIUS_API_KEY`. Never commit `.env`.
 
-**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. It points to the hosted API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`.
+**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. This branch points to its Supabase Preview API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`. Review the API target before merging into production.
 
 ## Hosting
 

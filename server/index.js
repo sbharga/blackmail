@@ -27,6 +27,7 @@ export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY,
     : hosted ? null : new Vault({ now, ttlMs }));
   const ownOrigins = new Set(['http://127.0.0.1:8787', 'http://localhost:8787', appOrigin,
     process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+    process.env.VERCEL_BRANCH_URL && `https://${process.env.VERCEL_BRANCH_URL}`,
     process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`].filter(Boolean));
   const limits = new Map();
   return async (req, res) => {
