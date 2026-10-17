@@ -16,33 +16,31 @@
 body{margin:0;background:var(--bg);
   background-image:radial-gradient(900px 480px at 85% -10%,var(--blue-glow),transparent 60%);
   background-attachment:fixed;min-height:100vh;}
+body.app-shell{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 ::selection{background:var(--blue);color:#fff}
 
-header{height:72px;margin:0 5%;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+header{height:64px;flex:none;padding:0 clamp(16px,4vw,32px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}
 .brand{display:flex;gap:11px;align-items:center;font-size:19px;font-weight:700;letter-spacing:-.3px;text-decoration:none;color:inherit}
 .logo{background:linear-gradient(150deg,#20232b,#0b0c0e);color:#fff;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:800;border:1px solid var(--line-2);box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .beta{font:8px/1 var(--mono);letter-spacing:1.5px;color:var(--blue);border:1px solid var(--blue-dim);padding:4px 6px;border-radius:5px;margin-left:8px}
 .connection{font:11px/1 var(--mono);color:var(--txt-3)}
 
-main{max-width:1120px;margin:48px auto 0;padding:0 30px}
-.eyebrow{font:10px/1 var(--mono);letter-spacing:2.5px;color:var(--blue)}
-h1{font-size:clamp(40px,6vw,66px);line-height:1.04;letter-spacing:-3px;font-weight:650;margin:18px 0}
-h1 span{color:var(--txt-3)}
-.intro{font-size:15px;color:var(--txt-2);margin:0 0 34px;max-width:460px}
+main{flex:1;min-height:0;display:flex;flex-direction:column}
 
-nav{display:flex;gap:4px;padding:5px;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;width:fit-content;max-width:100%;overflow:auto;margin-bottom:28px}
-.tab{display:flex;align-items:center;gap:8px;white-space:nowrap;background:none;border:0;cursor:pointer;color:var(--txt-3);font-size:12px;font-weight:600;padding:11px 15px;border-radius:8px;transition:.18s}
-.tab .num{font:9px/1 var(--mono);opacity:.7}
+nav{display:flex;gap:3px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:11px;max-width:100%;overflow:auto}
+.tab{display:flex;align-items:center;gap:8px;white-space:nowrap;background:none;border:0;cursor:pointer;color:var(--txt-3);font-size:12px;font-weight:600;padding:9px 14px;border-radius:8px;transition:.18s}
 .tab:hover{color:var(--txt-2)}
 .tab.active{background:var(--bg-3);color:var(--txt);box-shadow:0 4px 14px rgba(0,0,0,.4)}
-.tab.active .num{color:var(--blue)}
 
 button{cursor:pointer;font:inherit;border-radius:9px;transition:.15s;border:1px solid transparent}
 button:disabled{opacity:.5;cursor:wait}
 button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
-.panel{animation:rise .3s ease both}
-@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.panel{flex:1;min-height:0;animation:rise .3s ease both}
+#demo{display:flex;flex-direction:column;padding:16px clamp(14px,3vw,24px)}
+.work{width:100%;max-width:1060px;margin-inline:auto;padding:26px 24px}
+#compose,#receive,#sent{overflow:auto}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .hidden{display:none!important}
 
 /* cards / compose */
@@ -91,16 +89,17 @@ h3{font-size:18px;margin:0;letter-spacing:-.4px}
 .history-item small{font:10px/1 var(--mono);color:var(--txt-3)}
 .history-item button{margin-left:10px}
 
-#status{min-height:20px;font:12px/1.6 var(--mono);color:var(--blue-br);margin-top:20px}
-footer{border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:24px;padding:22px 0 30px;margin-top:40px;color:var(--txt-3);font-size:11px;line-height:1.7}
-footer span{font:9px/1 var(--mono);letter-spacing:1px;white-space:nowrap}
-footer p{margin:0;max-width:440px;text-align:right}
+#status{flex:none;min-height:0;font:12px/1.5 var(--mono);color:var(--blue-br);padding:0 clamp(14px,3vw,24px)}
+#status:not(:empty){padding-bottom:12px}
 
 @media(max-width:700px){
-  header{height:64px}.beta{display:none}
-  main{margin-top:30px;padding:0 18px}
+  header{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px}
+  .beta{display:none}
+  nav{order:3;width:100%}
+  .work{padding:18px 16px}
   .columns{grid-template-columns:1fr}.card{padding:22px}
-  .send-bar,footer{align-items:flex-start;flex-direction:column}
-  footer p{text-align:left}
+  .send-bar{align-items:flex-start;flex-direction:column}
   .connection{font-size:9px}
 }
+body.app-shell{overflow:auto}
+@media(min-width:701px){body.app-shell{overflow:hidden}}
