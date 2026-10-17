@@ -17,7 +17,7 @@ For the Chrome/Edge extension:
 1. Open `chrome://extensions` or `edge://extensions`.
 2. Enable Developer mode → Load unpacked → select this repo's `extension` folder.
 3. Click BlackMail in the browser toolbar. It opens the composer in a new tab.
-4. Keep the local Node server running.
+4. Extension points to `https://blackmail-eai-2026.vercel.app`. For local-only extension use, change `EXTENSION_API` in `extension/config.js` to `http://127.0.0.1:8787` and replace both hosted origins in `extension/manifest.json` with that local origin, then reload the extension and keep the local Node server running. The standalone localhost web demo always uses the local backend.
 
 Optional AI: copy `.env.example` to `.env`, add your Nebius key, restart the server. Without a key, edit both versions manually. Provider/model availability depends on your Nebius account. Your key stays server-side. Clicking **Polish with AI** sends the original draft to that provider.
 
@@ -64,7 +64,7 @@ The original `src/nebius_start_building.py` starter is preserved. Extension and 
 5. Set `APP_ORIGIN` to the exact production origin (e.g. `https://your-project.vercel.app`), then deploy/redeploy. Vercel's automatic deployment and production URLs are also allowed.
 6. Check `/api/health`: expect `"ok":true` and `"storage":"shared"`. Test creating a pass in one browser, unlocking in another, and revoking. A rendered homepage alone does not verify backend configuration.
 
-Hosted web client automatically calls its own origin. For the unpacked extension to use your hosted API, change `EXTENSION_API` in `extension/config.js` to your production HTTPS origin. Replace the localhost entries in `host_permissions` and CSP `connect-src` in `extension/manifest.json` with that exact origin, then reload the extension.
+Hosted web client automatically calls its own origin. The unpacked extension is configured for `https://blackmail-eai-2026.vercel.app`. To use another deployment, change `EXTENSION_API` in `extension/config.js`, `host_permissions`, and CSP `connect-src` in `extension/manifest.json` to that exact HTTPS origin, then reload the extension. Vercel Marketplace's `KV_REST_API_URL` / `KV_REST_API_TOKEN` variables are also accepted in place of the Upstash variable names.
 
 Redis stores ciphertext and hashed capabilities with a five-minute TTL. Expiry and revocation work across function instances. Shared per-IP rate limiting uses Redis too. Local storage still retains sender history; deleting cloud originals does not remove formal messages sent on other platforms. Storage-provider backup/retention policies also apply; this is not a guarantee of physical erasure from provider backups.
 
