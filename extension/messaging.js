@@ -6,6 +6,14 @@ const node = (tag, className, text) => {
   if (text !== undefined) result.textContent = text; return result;
 };
 let session = null;
+let confirmationNotice = '';
+// Email confirmation may return credentials in the fragment. Require explicit
+// password sign-in and remove those credentials from the visible URL/history.
+const confirmation = new URLSearchParams(location.hash.slice(1));
+if (confirmation.has('access_token') || confirmation.has('error_description')) {
+  confirmationNotice = confirmation.has('error_description') ? 'Confirmation link invalid or expired. Try signing in if you already confirmed your email.' : 'Email confirmed. Sign in to continue.';
+  window.history.replaceState(null, '', location.pathname + location.search);
+}
 try { session = JSON.parse(sessionStorage.getItem('blackmail.auth') || 'null'); } catch {}
 if (!session?.access_token || !session?.refresh_token || !Number.isFinite(session.expires_at)) session = null;
 let profile = null, contacts = [], selected = null, signup = false, enabled = false;
@@ -235,5 +243,5 @@ fetch(`${location.protocol === 'chrome-extension:' ? (await import('./config.js'
     if (!enabled) { accountStatus('Messaging setup pending. Try Chat demo, or ask the project owner to connect Supabase.'); return; }
     if (session) {
       try { await openInbox(); } catch (error) { clearAccount(error.message); }
-    } else accountStatus('Sign in, or create an account to get your username.');
+    } else accountStatus(confirmationNotice || 'Sign in, or create an account to get your username.');
   }).catch(() => { $('account-submit').disabled = true; accountStatus('Account service unavailable. Please refresh.'); });
