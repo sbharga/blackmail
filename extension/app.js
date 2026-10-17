@@ -58,8 +58,9 @@ const revokePass = (id, owner) => api(`/api/messages/${id}`, { owner }, 'DELETE'
 // Record a created pass in local sender history so it also appears under "Your passes".
 function addToHistory(entry) { history.unshift({ ...entry }); save(); }
 function tab(name) {
-  document.querySelectorAll('.panel').forEach(el => el.classList.toggle('hidden', el.id !== name));
-  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
+  const archived = ['demo', 'compose', 'receive', 'sent'].includes(name);
+  document.querySelectorAll('.panel').forEach(el => el.classList.toggle('hidden', el.id !== name && !(archived && el.id === 'guide')));
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name || (archived && el.dataset.tab === 'guide')));
   if (name !== 'receive') closeRead();
   status('');
   if (name === 'sent') renderHistory();
