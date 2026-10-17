@@ -13,8 +13,8 @@ const assets = new Map([
   ['/style.css', ['style.css', 'text/css']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   const vault = suppliedVault || (redisUrl && redisToken
     ? new RedisVault({ command: redisCommand(redisUrl, redisToken), now, ttlMs })
     : hosted ? null : new Vault({ now, ttlMs }));

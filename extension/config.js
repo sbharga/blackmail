@@ -1,3 +1,2 @@
-// Extension: replace with your exact HTTPS Vercel URL and update manifest permissions.
-// Hosted web client uses its own origin automatically.
-export const EXTENSION_API = 'http://127.0.0.1:8787';
+// Hosted web client uses its own origin. Extension uses this exact API origin.
+export const EXTENSION_API = 'https://blackmail-eai-2026.vercel.app';
