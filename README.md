@@ -19,18 +19,27 @@ Current delivery is inside BlackMail. Goal: formal messages through Gmail/Slack/
 
 Node.js 22+.
 
-```powershell
+```bash
 npm ci
-Copy-Item .env.example .env
+cp .env.example .env   # PowerShell: Copy-Item .env.example .env
 # Configure .env, then:
 npm start
 ```
 
-Open http://127.0.0.1:8787. Configure Supabase for accounts, Nebius for AI, and Redis for hosted vault/signaling. Never commit .env or secret keys.
+Open http://127.0.0.1:8787. `GET /api/health` reports `aiEnabled`, `messagingEnabled` and vault `storage` (`shared` Redis, `memory` local, or `unconfigured`). Never commit .env or secret keys.
 
-**Checks:** `npm test`, `npm run test:p2p`, `npm run typecheck`, `npm run build`.
+| Variable | Purpose |
+| --- | --- |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Accounts, contacts, formal inbox (publishable key only; never a service-role key) |
+| `NEBIUS_API_KEY`, `NEBIUS_MODEL` | AI rewrite (`/api/rewrite`); default model `deepseek-ai/DeepSeek-V4-Flash-0731` |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL`, `KV_REST_API_TOKEN`) | Any HTTPS Redis REST endpoint (Upstash-compatible; no SDK). Pass vault, rate limiting and P2P reconnect signaling; required when hosted on Vercel, optional locally (in-memory fallback) |
+| `APP_ORIGIN` | Exact production origin allowed by CORS |
 
-**Extension:** build, then Chrome/Edge > Extensions > Developer mode > Load unpacked > select `extension/`. It uses the production API.
+**Checks:** `npm test` (server, messaging, signaling), `npm run test:p2p` (vitest), `npm run typecheck`, `npm run build` (compiles `src/utils/p2p.ts`, copies client to `public/`).
+
+**Layout:** `extension/` browser client (served by the server, Chrome/Edge extension, and Vercel build source) · `server/` HTTP API, vault, Supabase adapter, peer signals · `api/` Vercel entry · `supabase/` migration + RLS tests · `src/utils/` P2P utility and tests · `test/` Node tests · `docs/` setup details. `src/nebius_start_building.py` is a standalone Nebius API example; the app does not use it.
+
+**Extension:** build, then Chrome/Edge > Extensions > Developer mode > Load unpacked > select `extension/`. It uses the production API (`extension/config.js`).
 
 **Deployment:** pushes to `main` deploy through Vercel. Set environment variables from [.env.example](.env.example), then redeploy.
 
