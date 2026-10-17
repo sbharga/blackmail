@@ -4,15 +4,17 @@
 
 Write naturally. Send an approved formal version through your usual app; share the original separately through a short-lived BlackMail pass.
 
+**`supabase-messaging` branch:** real signup/login, username contacts, and formal inbox delivery. [Setup and security checks](docs/supabase.md). This delivers inside BlackMail; external-app integration remains separate.
+
 ## Try the demo
 
-- **Chat demo:** Alice chats with Bob or Maya. Switch Alice/Bob perspectives and **Normal / BlackMail** views.
-- Write a message, polish with AI (or edit manually), review, and send. Share its demo pass, then switch to the recipient.
-- Revoke the original: the formal record stays. **Reset demo** starts over.
+- **Messenger:** a chat UI (black + Signal-blue) with a contacts sidebar — direct threads with Bob and Maya plus a **group chat** (Launch Week). Write naturally, **Polish** with AI (or edit), review the formal version, and **Seal & send**.
+- Flip the sliding **Formal / Original** toggle to reveal the real voice behind each message, with a live auto-lock countdown. Switch identity (⇄) to read a thread as the recipient. **Revoke** removes the original; the formal record stays.
+- Sending creates a **real encrypted vault pass** (it also appears under *Your passes*); **Original** fetches the ciphertext back from the vault and decrypts it in the browser; **Revoke** deletes the vault record. If the server is offline the chat falls back to a local simulation so the UI still demonstrates.
 
-Contacts, chat delivery, and passes in Chat demo are an **in-memory simulation**, cleared on reload. AI polishing calls Nebius. No real messages are sent.
+Identity-switch and the seeded sample messages are a single-browser simulation; encryption, storage, five-minute expiry, and revocation are the real backend. AI polishing calls Nebius. Group messages use one shared pass (bearer model: anyone holding the pass can open it).
 
-For real encrypted passes: **Compose** → approve both versions → copy/send formal text through another app → create/share the five-minute pass → recipient uses **Open a pass**. Revoke via **Your passes**.
+Also available as separate workspaces: **Compose** (two-column original/formal + create pass), **Open a pass**, and **Your passes**. Branding and a logo-generation prompt live in `branding/` (`extension/logo.svg` is the starter mark).
 
 ## Ideal setup
 
@@ -25,11 +27,11 @@ flowchart LR
     V -->|Valid short-lived pass| P["Bob: companion conversation"]
 ```
 
-Target: an extension companion panel aligned with the platform thread, bidirectional replies, authenticated contacts, and recipient-bound passes. Current MVP uses copy/paste; there are no direct platform integrations or real chat accounts. Browser extensions target web apps, not native mobile apps.
+Target: an extension companion panel aligned with the platform thread and recipient-bound private passes. This branch adds real BlackMail accounts, contacts, and formal replies. External messaging platforms still use copy/paste. Browser extensions target web apps, not native mobile apps.
 
 ## Run locally
 
-Node.js 22+; no npm dependencies.
+Node.js 22+; run `npm ci` for TypeScript build/test tools. No browser runtime dependencies.
 
 ```powershell
 npm start
@@ -38,7 +40,9 @@ npm test
 
 Open http://127.0.0.1:8787. For local AI, copy `.env.example` to `.env` and add `NEBIUS_API_KEY`. Never commit `.env`.
 
-**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. It points to the hosted API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`.
+**Informal P2P:** Messages → select a contact → Informal channel → exchange offer/answer tokens → send directly. Formal sending stays separate. Both peers must stay online. [Setup, tests and limits](docs/p2p.md).
+
+**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. This branch points to its Supabase Preview API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`. Review the API target before merging into production.
 
 ## Hosting
 
