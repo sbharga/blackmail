@@ -24,6 +24,7 @@ async function api(path, body, method = 'POST', token) {
   let response;
   try { response = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body), signal: AbortSignal.timeout(35000), cache: 'no-store' }); }
   catch { throw new Error('BlackMail server unavailable. Check your connection or local server.'); }
+  if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('Preview access required. Open this deployment in a browser signed into Vercel, or use the production app.');
   const result = await response.json();
   if (Number.isFinite(result.serverTime)) serverOffset = result.serverTime - Date.now();
   if (!response.ok) throw Object.assign(new Error(result.error || 'Request failed.'), { status: response.status });

@@ -4,6 +4,8 @@ Branch: `supabase-messaging`. Adds real BlackMail accounts and a formal inbox; n
 
 Preview: https://blackmail-eai-2026-git-supabase-messaging-tien-cb97.vercel.app
 
+Vercel currently protects previews with its own sign-in. Test this branch in the web preview with Vercel access. Cross-origin extension API access is not verified under that protection; use a public backend when preparing the production merge. No preview protection was disabled.
+
 1. Create a Supabase Free project. Enable Data API; keep email confirmation enabled.
 2. Run `supabase/migrations/202610170001_formal_messaging.sql` once in SQL Editor.
 3. Run `supabase/tests/rls.sql`. Expect “RLS checks passed”; fixtures roll back.
