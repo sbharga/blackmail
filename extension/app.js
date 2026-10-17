@@ -1,4 +1,5 @@
-const API = 'http://127.0.0.1:8787';
+import { EXTENSION_API } from './config.js';
+const API = location.protocol === 'chrome-extension:' ? EXTENSION_API : location.origin;
 const $ = id => document.getElementById(id);
 const encoder = new TextEncoder();
 const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
@@ -19,7 +20,7 @@ const save = () => {
 async function api(path, body, method = 'POST') {
   let response;
   try { response = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(35000), cache: 'no-store' }); }
-  catch { throw new Error('Local server unavailable. Run npm start and try again.'); }
+  catch { throw new Error('BlackMail server unavailable. Check your connection or local server.'); }
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Request failed.');
   return result;
@@ -161,5 +162,6 @@ setInterval(async () => {
 }, 3000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) closeRead(); });
 fetch(`${API}/api/health`).then(r => r.json()).then(data => {
-  $('connection').textContent = data.aiEnabled ? '● Local vault connected · AI ready' : '● Local vault connected · manual mode';
-}).catch(() => { $('connection').textContent = '○ Offline · run npm start'; });
+  if (!data.ok) { $('connection').textContent = '○ Connect Redis in Vercel to enable passes'; return; }
+  $('connection').textContent = `● ${data.storage === 'shared' ? 'Shared' : 'Local'} vault connected · ${data.aiEnabled ? 'AI ready' : 'manual mode'}`;
+}).catch(() => { $('connection').textContent = '○ Server offline'; });
