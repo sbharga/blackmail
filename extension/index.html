@@ -2,33 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BlackMail — Between the lines</title>
+  <title>BlackMail</title>
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="demo.css"><link rel="stylesheet" href="messaging.css">
 </head>
-<body>
+<body class="app-shell">
   <header>
     <a class="brand" href="index.html"><span class="logo">b.</span> BlackMail<span class="beta">BETA</span></a>
-    <span id="connection" class="connection">Connecting…</span>
-  </header>
-  <main>
-    <div class="eyebrow">FOR THE RECORD. AND OFF IT.</div>
-    <h1>One message.<br><span>Two sides of you.</span></h1>
-    <p class="intro">Keep it professional out there. Be yourself in here.</p>
     <nav aria-label="Workspace">
       <button class="tab active" data-tab="messaging">Messages</button><button class="tab" data-tab="demo">Messenger demo</button>
-      <button class="tab" data-tab="compose"><span class="num">02</span> Compose</button>
-      <button class="tab" data-tab="receive"><span class="num">03</span> Open a pass</button>
-      <button class="tab" data-tab="sent"><span class="num">04</span> Your passes</button>
+      <button class="tab" data-tab="compose">Compose</button>
+      <button class="tab" data-tab="receive">Open a pass</button>
+      <button class="tab" data-tab="sent">Your passes</button>
     </nav>
+    <span id="connection" class="connection">Connecting…</span>
+  </header>
 
-    <!-- ===================== MESSENGER (chat demo, wired to the live vault) ===================== -->
+  <main>
+    <!-- ===================== MESSENGER (home screen, wired to the live vault) ===================== -->
     <section id="messaging" class="panel">
       <div id="account-gate" class="card account-card"><span class="badge">YOUR REAL CONVERSATIONS</span><h2>Keep a connection.</h2><p>Sign in to send formal messages to other BlackMail users.</p><div class="account-tabs" role="group" aria-label="Account action"><button id="account-login-mode" class="secondary" aria-pressed="true">Sign in</button><button id="account-signup-mode" class="secondary" aria-pressed="false">Create account</button></div><form id="account-form" class="account-form"><div id="signup-fields" class="hidden"><label for="account-name">Display name</label><input id="account-name" maxlength="60" autocomplete="name"><label for="account-username">Username</label><input id="account-username" minlength="3" maxlength="24" pattern="[a-z][a-z0-9_]{2,23}" autocomplete="username" placeholder="alice"><p class="auth-help">3–24 lowercase letters, numbers or underscores. Starts with a letter.</p></div><div><label for="account-email">Email</label><input id="account-email" type="email" autocomplete="email" required maxlength="254"></div><div><label for="account-password">Password</label><input id="account-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></div><button id="account-submit" type="submit" class="primary">Sign in ↗</button></form><p id="account-status" class="account-status" role="status" aria-live="polite">Checking account service…</p><p class="messaging-note">Formal text is delivered and stored in your BlackMail inbox. Your private draft is not included in that record. AI polishing sends the draft to Nebius.</p></div>
       <div id="live-inbox" class="hidden"><div class="live-account"><div><strong id="account-identity"></strong><p>Formal inbox · visible only to you and each recipient.</p></div><div class="live-actions"><button id="inbox-refresh" class="secondary">Refresh</button><button id="account-logout" class="secondary">Sign out</button></div></div><div class="chat-shell live-chat"><aside class="contacts" aria-label="Your contacts"><div class="contacts-label">CONTACTS</div><form id="add-contact-form" class="add-contact"><label for="contact-username" class="hidden">Contact username</label><input id="contact-username" placeholder="@username" aria-label="Contact username" maxlength="25" required><button id="add-contact-submit" class="small" type="submit">Add</button></form><div id="live-contacts" class="live-contact-list"></div><div class="contact-foot">Share your username.<br>Start a conversation.</div></aside><div class="chat-main"><div class="chat-top"><div class="chat-contact"><span id="live-avatar" class="avatar bob">?</span><div><strong id="live-contact-name">Choose a contact</strong><small id="live-contact-username">Add someone by username to begin.</small></div></div><span class="badge">FORMAL RECORD</span></div><div id="live-messages" class="chat-messages" role="log" aria-label="Formal conversation" aria-live="polite"><p class="empty-inbox">Your conversations start here.</p></div><div class="chat-composer"><label for="live-draft">Private draft · stays on this tab</label><textarea id="live-draft" maxlength="3000" rows="2" placeholder="Write naturally, then review the formal version…" disabled></textarea><div class="composer-actions"><button id="live-polish" class="small" disabled>Polish with AI ↗</button><button id="live-review" class="primary" disabled>Review formal ↗</button></div><div id="live-preview" class="chat-preview hidden"><label for="live-formal">Formal version · this is what your recipient receives</label><textarea id="live-formal" maxlength="6000" rows="2"></textarea><div class="actions"><button id="live-send" class="primary">Send formal message ↗</button><button id="live-cancel" class="secondary">Cancel</button></div></div><p id="inbox-status" class="account-status" role="status" aria-live="polite"></p></div></div></div></div>
     </section>
     <section id="demo" class="panel hidden">
-      <p class="messaging-note">Single-browser demo identities and conversations. New originals use real encrypted vault passes; formal demo messages disappear on reload.</p>
       <div class="messenger">
         <!-- sidebar -->
         <aside class="ms-side" aria-label="Conversations">
@@ -39,13 +35,15 @@
           </div>
           <div class="ms-side-label">CONVERSATIONS</div>
           <div id="conversation-list" class="ms-convs"></div>
-          <div class="ms-side-foot">One thread. Two readings.<br>Formal on the record — the rest, sealed.</div>
+          <div class="ms-side-foot">Demo identities and conversations.<br>New originals use real vault passes. Formal demo messages clear on reload.
+            <button id="demo-reset" class="ms-reset">Reset demo ↺</button>
+          </div>
         </aside>
 
         <!-- thread -->
         <div class="ms-main">
           <div class="ms-head">
-            <div class="ms-peer"><span class="avatar" id="peer-avatar">B</span><div class="ms-peer-text"><strong id="peer-name">Bob</strong><small id="peer-sub">Teammate · companion thread</small></div></div>
+            <div class="ms-peer"><span class="avatar" id="peer-avatar">B</span><div class="ms-peer-text"><strong id="peer-name">Bob</strong><small id="peer-sub">Companion thread · formal on the record</small></div></div>
             <button id="decrypt" class="decrypt" aria-pressed="false" title="Reveal the original voice">
               <span class="slider"></span>
               <span class="opt active" id="opt-formal">✉ Formal</span>
@@ -73,31 +71,28 @@
           </div>
         </div>
       </div>
-      <div class="demo-bottom">
-        <p><strong>Try it:</strong> send a message → flip <em>Formal / Original</em> → switch identity (⇄) to read it as them → revoke the original.</p>
-        <button id="demo-reset" class="small">Reset demo ↺</button>
-      </div>
     </section>
 
     <!-- ===================== COMPOSE ===================== -->
     <section id="compose" class="panel hidden">
-      <div class="columns">
-        <article class="card original"><div class="card-head"><span class="badge">PRIVATE CHANNEL</span><span class="symbol">↗</span></div><h2>The real you.</h2><p>Only shared through your BlackMail pass.</p><label for="original">Original message</label><textarea id="original" maxlength="12000" placeholder="bro these numbers are wrong 😭 redo the totals before we send it"></textarea><div class="card-bottom"><span id="count">0 / 12,000</span><button id="rewrite" class="small">Polish with AI ↗</button></div></article>
-        <article class="card formal"><div class="card-head"><span class="badge">PUBLIC CHANNEL</span><span class="symbol">↗</span></div><h2>For the record.</h2><p>This is what you send through your usual app.</p><label for="formal">Formal message · review before sharing</label><textarea id="formal" maxlength="12000" placeholder="The figures appear to be incorrect. Please recalculate the totals before we send the report."></textarea><div class="card-bottom"><span>Always editable</span><button id="copy-formal" class="small">Copy formal ↗</button></div></article>
+      <div class="work">
+        <div class="columns">
+          <article class="card original"><div class="card-head"><span class="badge">PRIVATE CHANNEL</span><span class="symbol">↗</span></div><h2>The real you.</h2><p>Only shared through your BlackMail pass.</p><label for="original">Original message</label><textarea id="original" maxlength="12000" placeholder="bro these numbers are wrong 😭 redo the totals before we send it"></textarea><div class="card-bottom"><span id="count">0 / 12,000</span><button id="rewrite" class="small">Polish with AI ↗</button></div></article>
+          <article class="card formal"><div class="card-head"><span class="badge">PUBLIC CHANNEL</span><span class="symbol">↗</span></div><h2>For the record.</h2><p>This is what you send through your usual app.</p><label for="formal">Formal message · review before sharing</label><textarea id="formal" maxlength="12000" placeholder="The figures appear to be incorrect. Please recalculate the totals before we send the report."></textarea><div class="card-bottom"><span>Always editable</span><button id="copy-formal" class="small">Copy formal ↗</button></div></article>
+        </div>
+        <p class="provider-note">AI rewrite sends your draft to Nebius. Manual editing works without an API key.</p>
+        <div class="send-bar"><div><strong>A little trust. A short window.</strong><p>Original encrypted in your browser. Pass expires in 5 minutes.</p></div><button id="seal" class="primary">Create private pass <span>↗</span></button></div>
+        <div id="created" class="result hidden"><div class="result-head"><h3>Your private pass is ready.</h3><span id="created-time" class="pill"></span></div><p>Send the formal version through your app. Share this pass separately with your recipient.</p><label for="share-pass">Recipient pass · anyone holding it can open the original</label><textarea id="share-pass" readonly rows="3"></textarea><div class="actions"><button id="copy-pass" class="primary">Copy pass ↗</button><button id="try-pass" class="secondary">Preview recipient view</button></div></div>
       </div>
-      <p class="provider-note">AI rewrite sends your draft to Nebius. Manual editing works without an API key.</p>
-      <div class="send-bar"><div><strong>A little trust. A short window.</strong><p>Original encrypted in your browser. Pass expires in 5 minutes.</p></div><button id="seal" class="primary">Create private pass <span>↗</span></button></div>
-      <div id="created" class="result hidden"><div class="result-head"><h3>Your private pass is ready.</h3><span id="created-time" class="pill"></span></div><p>Send the formal version through your app. Share this pass separately with your recipient.</p><label for="share-pass">Recipient pass · anyone holding it can open the original</label><textarea id="share-pass" readonly rows="3"></textarea><div class="actions"><button id="copy-pass" class="primary">Copy pass ↗</button><button id="try-pass" class="secondary">Preview recipient view</button></div></div>
     </section>
 
     <!-- ===================== OPEN A PASS ===================== -->
-    <section id="receive" class="panel hidden"><article class="card receiver"><span class="badge">JUST BETWEEN YOU</span><h2>Got the other half?</h2><p>Paste a BlackMail pass. Valid for five minutes from creation.</p><label for="incoming">Private pass</label><textarea id="incoming" placeholder="bm1.message.access.key" rows="3"></textarea><button id="unlock" class="primary">Unlock original ↗</button><div id="opened" class="opened hidden"><div class="result-head"><span class="badge">ORIGINAL MESSAGE</span><span id="read-time" class="pill"></span></div><p id="plaintext"></p><button id="close-original" class="secondary">Close original</button></div></article></section>
+    <section id="receive" class="panel hidden"><div class="work"><article class="card receiver"><span class="badge">JUST BETWEEN YOU</span><h2>Got the other half?</h2><p>Paste a BlackMail pass. Valid for five minutes from creation.</p><label for="incoming">Private pass</label><textarea id="incoming" placeholder="bm1.message.access.key" rows="3"></textarea><button id="unlock" class="primary">Unlock original ↗</button><div id="opened" class="opened hidden"><div class="result-head"><span class="badge">ORIGINAL MESSAGE</span><span id="read-time" class="pill"></span></div><p id="plaintext"></p><button id="close-original" class="secondary">Close original</button></div></article></div></section>
 
     <!-- ===================== YOUR PASSES ===================== -->
-    <section id="sent" class="panel hidden"><div class="section-title"><h2>Your passes.</h2><p>Local history on this browser. Formal copies stay wherever you sent them.</p></div><div id="history"></div></section>
+    <section id="sent" class="panel hidden"><div class="work"><div class="section-title"><h2>Your passes.</h2><p>Local history on this browser. Formal copies stay wherever you sent them.</p></div><div id="history"></div></div></section>
 
     <p id="status" role="status" aria-live="polite"></p>
-    <footer><span>BLACKMAIL / SAY IT YOUR WAY</span><p>Passes limit future access. They cannot undo screenshots, copying, or messages already read.</p></footer>
   </main>
   <script type="module" src="app.js"></script>
   <script type="module" src="demo.js"></script>
