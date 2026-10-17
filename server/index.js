@@ -10,6 +10,9 @@ const assets = new Map([
   ['/index.html', ['index.html', 'text/html']],
   ['/app.js', ['app.js', 'text/javascript']],
   ['/config.js', ['config.js', 'text/javascript']],
+  ['/demo.js', ['demo.js', 'text/javascript']],
+  ['/demo-state.js', ['demo-state.js', 'text/javascript']],
+  ['/demo.css', ['demo.css', 'text/css']],
   ['/style.css', ['style.css', 'text/css']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {

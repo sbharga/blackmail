@@ -2,16 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BlackMail — Between the lines</title><link rel="stylesheet" href="style.css">
+  <title>BlackMail — Between the lines</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="demo.css">
 </head>
 <body>
-  <header><a class="brand" href="index.html"><span class="logo">b.</span> BlackMail<span class="beta">LOCAL BETA</span></a><span id="connection" class="connection">Connecting…</span></header>
+  <header><a class="brand" href="index.html"><span class="logo">b.</span> BlackMail<span class="beta">BETA</span></a><span id="connection" class="connection">Connecting…</span></header>
   <main>
     <div class="eyebrow">FOR THE RECORD. AND OFF IT.</div>
     <h1>One message.<br><span>Two sides of you.</span></h1>
     <p class="intro">Keep it professional out there. Be yourself in here.</p>
-    <nav aria-label="Workspace"><button class="tab active" data-tab="compose">01 &nbsp; Compose</button><button class="tab" data-tab="receive">02 &nbsp; Open a pass</button><button class="tab" data-tab="sent">03 &nbsp; Your passes</button></nav>
-    <section id="compose" class="panel">
+    <nav aria-label="Workspace"><button class="tab active" data-tab="demo">01 &nbsp; Chat demo</button><button class="tab" data-tab="compose">02 &nbsp; Compose</button><button class="tab" data-tab="receive">03 &nbsp; Open a pass</button><button class="tab" data-tab="sent">04 &nbsp; Your passes</button></nav>
+    <section id="demo" class="panel">
+      <div class="demo-caption"><span class="badge">INTERACTIVE DEMO</span><p>Try both sides of a conversation. Simulated contacts and passes; no messages sent. AI polishing uses Nebius.</p></div>
+      <div class="chat-shell">
+        <aside class="contacts" aria-label="Demo contacts">
+          <div class="identity"><span class="avatar alice" id="my-avatar">A</span><div><strong id="my-name">Alice</strong><small>Your demo account</small></div></div>
+          <button id="switch-person" class="secondary">Switch to Bob ↔</button>
+          <div class="contacts-label">MESSAGES</div><div id="contact-list"></div>
+          <div class="contact-foot">Same conversation.<br>Two ways to read it.</div>
+        </aside>
+        <div class="chat-main">
+          <div class="chat-top"><div class="chat-contact"><span id="their-avatar" class="avatar bob">B</span><div><strong id="their-name">Bob</strong><small>Demo contact</small></div></div><div class="view-switch" role="group" aria-label="Message view"><button id="view-normal" aria-pressed="true">Normal</button><button id="view-blackmail" aria-pressed="false">BlackMail</button></div></div>
+          <div class="channel-note" id="channel-note">NORMAL · The formal record your usual app would receive.</div>
+          <div id="chat-messages" class="chat-messages" role="log" aria-label="Demo conversation" aria-live="polite"></div>
+          <div class="chat-composer"><label for="chat-draft" id="draft-label">Write as Alice</label><textarea id="chat-draft" maxlength="3000" rows="2" placeholder="Type it how you would actually say it…"></textarea><div class="composer-actions"><span>Write naturally. Review before sending.</span><button id="chat-polish" class="small">Polish with AI ↗</button><button id="chat-review" class="primary">Review & send ↗</button></div><div id="chat-preview" class="chat-preview hidden"><label for="chat-formal">Formal version · editable</label><textarea id="chat-formal" maxlength="6000" rows="2"></textarea><div class="actions"><button id="chat-send" class="primary">Send demo message ↗</button><button id="chat-cancel" class="secondary">Cancel</button></div></div><p id="demo-status" role="status" aria-live="polite"></p></div>
+        </div>
+      </div>
+      <div class="demo-bottom"><p><strong>Try it:</strong> switch views → send a message → share its pass → switch to Bob → revoke the original.</p><button id="demo-reset" class="small">Reset demo ↺</button></div>
+    </section>
+    <section id="compose" class="panel hidden">
       <div class="columns">
         <article class="card original"><div class="card-head"><span class="badge">PRIVATE CHANNEL</span><span class="symbol">↗</span></div><h2>The real you.</h2><p>Only shared through your BlackMail pass.</p><label for="original">Original message</label><textarea id="original" maxlength="12000" placeholder="bro these numbers are wrong 😭 redo the totals before we send it"></textarea><div class="card-bottom"><span id="count">0 / 12,000</span><button id="rewrite" class="small">Polish with AI ↗</button></div></article>
         <article class="card formal"><div class="card-head"><span class="badge">PUBLIC CHANNEL</span><span class="symbol">↗</span></div><h2>For the record.</h2><p>This is what you send through your usual app.</p><label for="formal">Formal message · review before sharing</label><textarea id="formal" maxlength="12000" placeholder="The figures appear to be incorrect. Please recalculate the totals before we send the report."></textarea><div class="card-bottom"><span>Always editable</span><button id="copy-formal" class="small">Copy formal ↗</button></div></article>
@@ -26,5 +44,6 @@
     <footer><span>BLACKMAIL / SAY IT YOUR WAY</span><p>Passes limit future access. They cannot undo screenshots, copying, or messages already read.</p></footer>
   </main>
   <script type="module" src="app.js"></script>
+  <script type="module" src="demo.js"></script>
 </body>
 </html>
