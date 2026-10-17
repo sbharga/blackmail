@@ -1,4 +1,11 @@
 const WEEK = 7 * 24 * 60 * 60 * 1000;
+const CLOCK_SKEW = 5 * 60 * 1000;
+export function connectionLabel(state, link) {
+  if (state === 'Connected') return link.remembered ? 'Connected · link saved' : link.storageAvailable === false ? 'Connected · browser storage unavailable' : 'Connected · saving link…';
+  if (link.remembered) return 'Reconnecting · link saved';
+  if (state === 'Handshaking') return 'Connecting…';
+  return 'Not paired · set up once';
+}
 const hex = bytes => Array.from(bytes, x => x.toString(16).padStart(2, '0')).join('');
 const unhex = text => Uint8Array.from(text.match(/../g), x => parseInt(x, 16));
 const b64 = bytes => btoa(String.fromCharCode(...bytes));
@@ -15,26 +22,26 @@ export async function openSignal(packet, secret) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 export function createReconnect(session, { request, storage = localStorage, now = Date.now, notice = () => {} }) {
-  let owner = null, contact = null, pair = null, run = 0, busy = false, pending = null, wakeAt = 0, pausedUntil = 0, wasReady = false;
+  let owner = null, contact = null, pair = null, run = 0, busy = false, pending = null, wakeAt = 0, pausedUntil = 0, wasReady = false, storageAvailable = null;
   const key = () => `blackmail.peer-link:${owner}:${contact}`;
   const leader = () => owner < contact;
   function persist() {
-    try { storage.setItem(key(), JSON.stringify(pair)); }
-    catch { notice('Browser storage unavailable. Peer link cannot survive refresh.'); }
+    try { storage.setItem(key(), JSON.stringify(pair)); storageAvailable = true; }
+    catch { storageAvailable = false; notice('Browser storage unavailable. Peer link cannot survive refresh.'); }
   }
   function load() {
     try {
       const value = JSON.parse(storage.getItem(key()) || 'null');
       if (value && /^[a-f0-9]{64}$/.test(value.secret) && typeof value.id === 'string' &&
-          Number.isFinite(value.expiresAt) && value.expiresAt > now() && value.expiresAt <= now() + WEEK) return value;
+          Number.isFinite(value.expiresAt) && value.expiresAt > now() && value.expiresAt <= now() + WEEK + CLOCK_SKEW) { storageAvailable = true; return value; }
       storage.removeItem(key());
-    } catch { /* Browser storage may be disabled. Manual handshake still works. */ }
+    } catch { storageAvailable = false; }
     return null;
   }
   function remember(value) {
-    if (!owner || !contact || session.snapshot().state !== 'Connected') return;
+    if (!owner || !contact || !['Connected', 'Handshaking'].includes(session.snapshot().state)) return;
     if (value?.kind === 'remember' && !leader() && typeof value.id === 'string' && value.id.length <= 100 &&
-        typeof value.secret === 'string' && /^[a-f0-9]{64}$/.test(value.secret) && Number.isFinite(value.expiresAt) && value.expiresAt > now() && value.expiresAt <= now() + WEEK) {
+        typeof value.secret === 'string' && /^[a-f0-9]{64}$/.test(value.secret) && Number.isFinite(value.expiresAt) && value.expiresAt > now() && value.expiresAt <= now() + WEEK + CLOCK_SKEW) {
       pair = { id: value.id, secret: value.secret, expiresAt: value.expiresAt, confirmed: true };
       persist(); session.control({ kind: 'remember-ack', id: pair.id }).catch(() => {});
       notice('Peer link remembered for seven days in this browser.');
@@ -110,9 +117,9 @@ export function createReconnect(session, { request, storage = localStorage, now 
   }
   return {
     tick, ready: () => ready().catch(() => {}),
-    select(userId, contactId) { run++; owner = userId; contact = contactId; pending = null; wakeAt = pausedUntil = 0; wasReady = false; pair = owner && contact ? load() : null; },
+    select(userId, contactId) { run++; owner = userId; contact = contactId; pending = null; wakeAt = pausedUntil = 0; wasReady = false; storageAvailable = null; pair = owner && contact ? load() : null; },
     manual() { run++; pausedUntil = now() + 120000; pending = null; wasReady = false; },
     forget() { run++; if (owner && contact) { try { storage.removeItem(key()); } catch {} } pair = null; pending = null; pausedUntil = Infinity; session.reset(contact); notice('Remembered link removed from this browser.'); },
-    snapshot: () => ({ remembered: Boolean(pair?.confirmed && pair.expiresAt > now()), expiresAt: pair?.expiresAt }),
+    snapshot: () => ({ remembered: Boolean(storageAvailable && pair?.confirmed && pair.expiresAt > now()), expiresAt: pair?.expiresAt, storageAvailable }),
   };
 }

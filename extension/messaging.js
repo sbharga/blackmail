@@ -23,6 +23,7 @@ let profile = null, contacts = [], selected = null, signup = false, enabled = fa
 let epoch = 0, revision = 0, refreshPromise = null, syncing = false, sending = false, polishing = false;
 let contactsAt = 0, threadFingerprint = '', pendingMessageId = null;
 let aiRevision = -1, formalMessages = [];
+let syncAgain = false;
 const accountStatus = text => { $('account-status').textContent = text; };
 const inboxStatus = text => { $('inbox-status').textContent = text; };
 function storeSession(value) {
@@ -35,6 +36,7 @@ function invalidatePreview() {
   $('live-preview').classList.add('hidden'); $('live-formal').value = '';
 }
 function clearAccount(message = '') {
+  syncAgain = false;
   formalMessages = [];
   peerUI.select(null);
   epoch++; storeSession(null); profile = null; contacts = []; selected = null; contactsAt = 0;
@@ -178,7 +180,8 @@ document.addEventListener('blackmail-peer-change', () => {
   if (profile && selected) drawMessages(formalMessages);
 });
 async function sync(forceContacts = false) {
-  if (!profile || !session || syncing) return;
+  if (!profile || !session) return;
+  if (syncing) { if (forceContacts) syncAgain = true; return; }
   syncing = true;
   const started = epoch;
   try {
@@ -195,7 +198,10 @@ async function sync(forceContacts = false) {
       if (started === epoch && selected?.id === contact.id) drawMessages(result.messages);
     }
   } catch (error) { if (started === epoch && session) inboxStatus(error.message); }
-  finally { syncing = false; }
+  finally {
+    syncing = false;
+    if (syncAgain && profile && session) { syncAgain = false; queueMicrotask(() => sync(true)); }
+  }
 }
 $('inbox-refresh').addEventListener('click', () => sync(true));
 $('add-contact-form').addEventListener('submit', async event => {
@@ -281,6 +287,8 @@ $('live-send').addEventListener('click', async () => {
   }
 });
 document.querySelector('[data-tab="messaging"]').addEventListener('click', () => sync(true));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { sync(true); peerUI.wake(); } });
+window.addEventListener('online', () => { sync(true); peerUI.wake(); });
 setInterval(() => { if (!document.hidden && !$('messaging').classList.contains('hidden')) sync(); }, 3000);
 // Availability only: project URL and API keys never need to reach the browser.
 fetch(`${location.protocol === 'chrome-extension:' ? (await import('./config.js')).EXTENSION_API : location.origin}/api/health`)

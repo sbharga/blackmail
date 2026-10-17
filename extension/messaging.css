@@ -5,3 +5,32 @@
 .peer-panel{border:1px solid var(--blue-dim);border-radius:12px;padding:14px;margin-bottom:18px;background:var(--bg-2)}.peer-panel summary{cursor:pointer;font-weight:650;font-size:13px}.peer-panel summary span{display:block;font:10px var(--mono);color:var(--blue-br);margin-top:7px}.peer-panel p{font-size:11px;line-height:1.6;color:var(--txt-2)}.peer-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.peer-panel textarea{width:100%;min-height:60px;font-size:12px}.peer-panel label{margin-top:12px}.peer-panel #peer-log{max-height:200px;overflow:auto}.peer-panel #peer-log p{white-space:pre-wrap;overflow-wrap:anywhere;border-left:2px solid var(--blue);padding-left:10px}.peer-panel #peer-send{margin-top:10px}
 .live-chat .message-bubble.informal-bubble{border-left:3px solid var(--blue);background:var(--bg-2)}
 #guide{overflow:auto}#guide>.work{line-height:1.8;color:var(--txt-2)}#guide summary{cursor:pointer;color:var(--txt)}#guide nav{margin-top:15px;flex-wrap:wrap}#guide>.panel:not(.hidden){min-height:620px}#guide #demo{height:680px}#peer-forget{margin-left:8px}
+/* One viewport: header/setup, one scrolling conversation, one composer. */
+body.app-shell{height:100dvh;min-height:0;overflow:hidden}
+#messaging{display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:12px clamp(12px,2vw,24px)}
+#messaging #account-gate{max-height:100%;overflow:auto;flex:none;width:100%}
+#messaging #live-inbox{display:flex;flex:1;flex-direction:column;min-height:0;max-width:none;width:100%;margin:0}
+.live-account{flex:none;margin-bottom:10px;gap:10px}.live-account p{margin:4px 0 0}.live-account .secondary{padding:9px 13px}
+.live-chat{flex:1;min-height:0;grid-template-rows:minmax(0,1fr)}
+.live-chat .contacts{min-height:0;overflow:hidden;gap:12px}.live-contact-list{flex:1;min-height:0;max-height:none;overflow:auto}
+.live-chat .contact{color:var(--txt)}
+.live-chat .chat-main{min-height:0;overflow:hidden}
+.live-chat .chat-top{position:relative;flex:none;padding:12px 18px;z-index:2}
+.live-chat .chat-messages{height:auto;flex:1;min-height:65px;padding:18px;overflow:auto}
+.live-chat .chat-composer{flex:none;margin-top:0;padding:10px 16px}
+.live-chat .chat-composer>label{margin:8px 0}.live-chat .chat-composer>textarea{min-height:58px;max-height:130px;padding:10px 12px;resize:vertical}
+.live-chat .chat-composer>p{margin:4px 0;min-height:0}.live-chat .chat-preview{margin-top:10px;padding-top:10px}
+.live-chat .chat-preview label{margin:7px 0}.live-chat .chat-preview textarea{min-height:58px;max-height:110px;padding:8px 12px}
+.live-chat .composer-actions{margin-top:6px}.live-chat .chat-preview .actions{margin-top:7px}
+.chat-top .peer-panel{margin:0;padding:0;border:0;background:none;flex:none;max-width:55%}
+.chat-top .peer-panel>summary{padding:8px 10px;border:1px solid var(--line-2);border-radius:10px;font-size:11px;text-align:right;list-style:none}
+.chat-top .peer-panel>summary::after{content:' ▾';color:var(--txt-3)}
+.chat-top .peer-panel>summary span{display:block;font-size:10px;line-height:1.5;margin-top:4px}
+.peer-body{position:absolute;right:12px;top:calc(100% + 4px);width:min(620px,calc(100% - 24px));max-height:min(65dvh,590px);overflow:auto;padding:18px;background:var(--bg-3);border:1px solid var(--blue-dim);border-radius:12px;box-shadow:0 16px 42px #0008;z-index:5;text-align:left}
+.peer-body textarea{max-height:100px;min-height:60px}.peer-body #peer-expiry{color:var(--blue-br)}
+@media(max-width:700px){
+  #messaging{padding:8px}.live-account{align-items:center;flex-wrap:nowrap}.live-account p{display:none}.live-actions{gap:5px}
+  .live-chat{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .live-chat .contacts{padding:8px;gap:7px}.live-contact-list{flex:none;max-height:65px}.live-contact-list .contact{padding:6px;min-width:130px}.live-contact-list .avatar{width:30px;height:30px}
+  .live-chat .add-contact{max-width:none}.live-chat .chat-top{padding:9px 12px}.live-chat .chat-composer{padding:8px 10px}
+}

@@ -37,6 +37,15 @@ async function connect(h) {
   h.receive(JSON.stringify({ blackmail: 1, type: 'pong', nonce: ping.nonce, session: 'remote-session' }), 'peer-b');
 }
 describe('informal messaging integration', () => {
+  it('accepts pairing control after an authenticated ping, before the responder pong', async () => {
+    const h=harness();h.session.reset('alice');await h.session.answer('offer');
+    const controls=[];h.session.onControl(value=>controls.push(value));
+    h.receive(JSON.stringify({blackmail:1,type:'ping',nonce:'probe',session:'remote-session'}),'peer-b');
+    h.receive(JSON.stringify({blackmail:1,type:'control',value:{kind:'remember'},session:'remote-session'}),'peer-b');
+    expect(controls).toEqual([{kind:'remember'}]);
+    await h.session.control({kind:'remember-ack'});
+    expect(h.session.snapshot().state).toBe('Handshaking');
+  });
   it('requires an acknowledged channel, receives only its peer, and clears on account/contact change', async () => {
     const h = harness(); h.session.reset('bob');
     await expect(h.session.send('hi')).rejects.toThrow('handshake');

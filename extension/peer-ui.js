@@ -1,6 +1,6 @@
 import * as transport from './p2p.js';
 import { serverNow } from './app.js';
-import { createReconnect } from './peer-reconnect.js';
+import { createReconnect, connectionLabel } from './peer-reconnect.js';
 import { createPeerSession } from './p2p-session.js';
 export function setupPeerUI() {
   const $ = id => document.getElementById(id);
@@ -8,11 +8,12 @@ export function setupPeerUI() {
   let owner = null, call = async () => { throw new Error('Sign in first.'); }, reconnect = null;
   const status = text => { $('peer-status').textContent = text; };
   const session = createPeerSession(transport, render, serverNow);
-  reconnect = createReconnect(session, { request: (...args) => call(...args), now: serverNow, notice: status });
+  reconnect = createReconnect(session, { request: (...args) => call(...args), now: serverNow, notice: text => { status(text); queueMicrotask(render); } });
   function render() {
     const current = session.snapshot();
     const remembered = reconnect?.snapshot();
-    $('peer-state').textContent = `${current.state}${remembered?.remembered ? ` · remembered until ${new Date(remembered.expiresAt).toLocaleDateString()}` : ''}`;
+    $('peer-state').textContent = contact ? connectionLabel(current.state, remembered || {}) : 'Select a contact';
+    $('peer-expiry').textContent = remembered?.remembered ? `Link saved in this browser until ${new Date(remembered.expiresAt).toLocaleDateString()}. Both people must be online to reconnect.` : 'Complete setup once and wait for “link saved” before refreshing.';
     for (const id of ['peer-offer', 'peer-answer', 'peer-finalize']) $(id).disabled = busy || !contact;
     document.dispatchEvent(new Event('blackmail-peer-change'));
     if (current.state === 'Connected') reconnect?.ready();
@@ -36,6 +37,7 @@ export function setupPeerUI() {
   return {
     snapshot: () => session.snapshot(),
     send: text => session.send(text),
+    wake: () => reconnect.tick(),
     account(id, request) { owner = id; call = request; },
     select(next) {
       contact = next; reconnect.select(owner, next?.id || null); session.reset(next?.id || null); clearTokens();
