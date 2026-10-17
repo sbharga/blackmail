@@ -5,6 +5,6 @@
   "description": "One message. Two voices. Share the original through a five-minute pass.",
   "action": { "default_title": "Open BlackMail" },
   "background": { "service_worker": "background.js" },
-  "host_permissions": ["https://blackmail-eai-2026-git-supabase-messaging-tien-cb97.vercel.app/*"],
-  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://blackmail-eai-2026-git-supabase-messaging-tien-cb97.vercel.app" }
+  "host_permissions": ["https://blackmail-eai-2026.vercel.app/*"],
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://blackmail-eai-2026.vercel.app" }
 }
