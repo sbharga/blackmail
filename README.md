@@ -8,7 +8,7 @@ Write naturally. Review a formal version for the record; share your original pri
 
 - Sign in, add a contact by username, and write in one composer.
 - **Connected:** Nebius rewrites your draft; review it, then send formal + original.
-- **Disconnected:** send formal only; AI is optional.
+- **Disconnected:** send formal only. **Review with AI** prepares the text; manual review is available if AI is unavailable.
 - Pair once through **Informal setup**. Wait for **Connected · link saved**; this browser remembers the link for seven days.
 - Refresh clears informal history, keeps formal records, and reconnects when both peers are online.
 - Archived demos and five-minute pass tools live under **Guide**.
