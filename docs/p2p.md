@@ -5,7 +5,7 @@ In **Messages**, sign in and select a contact. Open **Informal setup**.
 1. Alice creates an offer and shares the token with Bob through a trusted channel.
 2. Bob selects Alice, pastes her offer, clicks **Answer pasted offer**, and shares his answer.
 3. Alice pastes Bob's answer and clicks **Apply pasted answer**. Keep both tabs open until both show Connected.
-4. Write in the single message composer. Connected: **Review formal** automatically calls Nebius; review/edit its output, then **Send both versions**. The approved formal text goes to Supabase first, and the original goes over P2P. Disconnected: review/send formal only; AI is optional.
+4. Write in the single message composer. Connected: **Review with AI** calls Nebius; review/edit its output, then **Send both versions**. The approved formal text goes to Supabase first, and the original goes over P2P. Disconnected: the same action prepares a formal-only message. If AI is unavailable, edit/review it manually.
 
 Setup has no separate informal composer. Both message types appear in the same conversation with channel labels. AI must succeed for the current draft before a connected dual send; failures leave the draft for review/retry. If the private channel drops after formal delivery, the UI reports that only formal succeeded, without automatically resending the formal record. Connection state is checked when Send is clicked.
 
