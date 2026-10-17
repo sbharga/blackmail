@@ -4,7 +4,7 @@
 
 Write naturally. Send an approved formal version through your usual app; share the original separately through a short-lived BlackMail pass.
 
-**`supabase-messaging` branch:** real signup/login, username contacts, and formal inbox delivery. [Setup and security checks](docs/supabase.md). This delivers inside BlackMail; external-app integration remains separate.
+**Messages:** real signup/login, username contacts, and formal inbox delivery. [Setup and security checks](docs/supabase.md). This delivers inside BlackMail; external-app integration remains separate.
 
 ## Try the demo
 
@@ -42,7 +42,7 @@ Open http://127.0.0.1:8787. For local AI, copy `.env.example` to `.env` and add 
 
 **Informal P2P:** Messages → select a contact → Informal channel → exchange offer/answer tokens → send directly. Formal sending stays separate. Both peers must stay online. [Setup, tests and limits](docs/p2p.md).
 
-**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. This branch points to its Supabase Preview API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`. Review the API target before merging into production.
+**Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. The extension points to the production API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`.
 
 ## Hosting
 
