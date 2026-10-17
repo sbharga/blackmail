@@ -14,6 +14,7 @@ const assets = new Map([
   ['/demo-state.js', ['demo-state.js', 'text/javascript']],
   ['/demo.css', ['demo.css', 'text/css']],
   ['/style.css', ['style.css', 'text/css']],
+  ['/logo.svg', ['logo.svg', 'image/svg+xml']],
 ]);
 export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY, vault: suppliedVault, hosted = Boolean(process.env.VERCEL), appOrigin = process.env.APP_ORIGIN } = {}) {
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
