@@ -1,6 +1,6 @@
 # BlackMail
 
-One message. Two voices. Local browser-extension MVP; nothing deployed.
+One message. Two voices. Browser-extension MVP with local and Vercel hosting modes.
 
 ## Run
 
@@ -51,6 +51,21 @@ Covers encryption/decryption, wrong keys, server-enforced expiry, revoke authori
 
 ## MVP boundaries
 
-Local demo only: no hosting, accounts, durable backend, authenticated recipients, direct platform integrations, or production security audit. Copy/paste works across platforms; native-app extensions are not included. Before public use: HTTPS, identity and recipient binding, proper rate limiting, persistence policy, recovery, and security review.
+No accounts, authenticated recipients, direct platform integrations, or production security audit. Copy/paste works across platforms; native-app extensions are not included. Local mode uses memory; Vercel mode requires shared Redis storage and fails closed without it. Recipient binding and identity remain future work.
 
 The original `src/nebius_start_building.py` starter is preserved. Extension and local server use Node.js instead.
+
+## Vercel hosting
+
+1. Push these changes to your GitHub repo; import the repo into Vercel.
+2. Framework preset: **Other**. `vercel.json` supplies build command (`npm run build`), output directory (`public`), and API routing. Node.js 22+.
+3. Connect an Upstash Redis database (via Vercel Marketplace or your existing Upstash account). Set server-side environment variables `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in the Vercel project. Use REST credentials, not a `redis://` connection string. Do not put secrets in frontend config or source control.
+4. Optional: set `NEBIUS_API_KEY` and `NEBIUS_MODEL` for rewriting. Without these, users edit both versions manually.
+5. Set `APP_ORIGIN` to the exact production origin (e.g. `https://your-project.vercel.app`), then deploy/redeploy. Vercel's automatic deployment and production URLs are also allowed.
+6. Check `/api/health`: expect `"ok":true` and `"storage":"shared"`. Test creating a pass in one browser, unlocking in another, and revoking. A rendered homepage alone does not verify backend configuration.
+
+Hosted web client automatically calls its own origin. For the unpacked extension to use your hosted API, change `EXTENSION_API` in `extension/config.js` to your production HTTPS origin. Replace the localhost entries in `host_permissions` and CSP `connect-src` in `extension/manifest.json` with that exact origin, then reload the extension.
+
+Redis stores ciphertext and hashed capabilities with a five-minute TTL. Expiry and revocation work across function instances. Shared per-IP rate limiting uses Redis too. Local storage still retains sender history; deleting cloud originals does not remove formal messages sent on other platforms. Storage-provider backup/retention policies also apply; this is not a guarantee of physical erasure from provider backups.
+
+`npm test` includes mocked Redis adapter/TTL and missing-hosted-storage tests. Live Vercel routing, actual Redis Lua execution, and provider credentials must be verified after provisioning. No deployment is created merely by adding these files.

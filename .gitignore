@@ -151,6 +151,9 @@ activemq-data/
 
 # Environments
 .env
+.vercel/
+public/
+node_modules/
 .envrc
 .venv
 env/
