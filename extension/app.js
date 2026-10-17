@@ -10,6 +10,8 @@ let activeRead = null;
 let activeCreated = null;
 let polling = false;
 let creating = false;
+let serverOffset = 0;
+const serverNow = () => Date.now() + serverOffset;
 let history;
 try { history = JSON.parse(localStorage.getItem('blackmail.sent') || '[]'); if (!Array.isArray(history)) history = []; } catch { history = []; }
 const status = text => { $('status').textContent = text; };
@@ -22,6 +24,7 @@ async function api(path, body, method = 'POST') {
   try { response = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(35000), cache: 'no-store' }); }
   catch { throw new Error('BlackMail server unavailable. Check your connection or local server.'); }
   const result = await response.json();
+  if (Number.isFinite(result.serverTime)) serverOffset = result.serverTime - Date.now();
   if (!response.ok) throw new Error(result.error || 'Request failed.');
   return result;
 }
@@ -39,7 +42,7 @@ function closeRead(message = '') {
   $('opened').classList.add('hidden');
   if (message) status(message);
 }
-function remaining(expiresAt) { return `${Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))}s left`; }
+function remaining(expiresAt) { return `${Math.max(0, Math.ceil((expiresAt - serverNow()) / 1000))}s left`; }
 async function copy(text) {
   if (!text.trim()) throw new Error('Nothing to copy yet.');
   try { await navigator.clipboard.writeText(text); status('Copied. Paste into your messaging app.'); }
@@ -87,7 +90,7 @@ action('seal', async () => {
   } finally { creating = false; }
 });
 action('copy-pass', async () => {
-  if (!activeCreated || activeCreated.expiresAt <= Date.now()) throw new Error('Pass expired. Create a new one.');
+  if (!activeCreated || activeCreated.expiresAt <= serverNow()) throw new Error('Pass expired. Create a new one.');
   await copy(activeCreated.pass);
 });
 action('try-pass', () => { tab('receive'); $('incoming').value = activeCreated?.pass || ''; });
@@ -102,7 +105,7 @@ action('unlock', async () => {
   let plain;
   try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(result.iv) }, key, unb64(result.ciphertext)); }
   catch { throw new Error('Could not decrypt. Check the complete pass.'); }
-  if (result.expiresAt <= Date.now()) throw new Error('Pass expired.');
+  if (result.expiresAt <= serverNow()) throw new Error('Pass expired.');
   activeRead = { id, access, expiresAt: result.expiresAt };
   $('plaintext').textContent = new TextDecoder().decode(plain);
   $('read-time').textContent = remaining(result.expiresAt);
@@ -119,12 +122,12 @@ function renderHistory() {
     const card = document.createElement('article'); card.className = 'history-item';
     const row = document.createElement('div'); row.className = 'result-head';
     const label = document.createElement('small');
-    label.textContent = `${new Date(item.createdAt).toLocaleString()} · ${item.revoked ? 'Revoked' : item.expiresAt <= Date.now() ? 'Expired' : remaining(item.expiresAt)}`;
+    label.textContent = `${new Date(item.createdAt).toLocaleString()} · ${item.revoked ? 'Revoked' : item.expiresAt <= serverNow() ? 'Expired' : remaining(item.expiresAt)}`;
     const controls = document.createElement('div');
     const copyButton = document.createElement('button'); copyButton.className = 'secondary'; copyButton.textContent = 'Copy formal';
     copyButton.addEventListener('click', () => copy(item.formal).catch(error => status(error.message)));
     controls.append(copyButton);
-    if (!item.revoked && item.expiresAt > Date.now()) {
+    if (!item.revoked && item.expiresAt > serverNow()) {
       const revoke = document.createElement('button'); revoke.className = 'secondary'; revoke.textContent = 'Revoke original';
       revoke.addEventListener('click', async () => {
         revoke.disabled = true;
@@ -145,11 +148,11 @@ function renderHistory() {
 setInterval(() => {
   if (activeCreated) {
     $('created-time').textContent = remaining(activeCreated.expiresAt);
-    if (activeCreated.expiresAt <= Date.now()) { activeCreated = null; $('share-pass').value = ''; $('created-time').textContent = 'Expired'; }
+    if (activeCreated.expiresAt <= serverNow()) { activeCreated = null; $('share-pass').value = ''; $('created-time').textContent = 'Expired'; }
   }
   if (activeRead) {
     $('read-time').textContent = remaining(activeRead.expiresAt);
-    if (activeRead.expiresAt <= Date.now()) closeRead('Pass expired. Original removed from this view.');
+    if (activeRead.expiresAt <= serverNow()) closeRead('Pass expired. Original removed from this view.');
   }
 }, 500);
 setInterval(async () => {
@@ -162,6 +165,7 @@ setInterval(async () => {
 }, 3000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) closeRead(); });
 fetch(`${API}/api/health`).then(r => r.json()).then(data => {
+  if (Number.isFinite(data.serverTime)) serverOffset = data.serverTime - Date.now();
   if (!data.ok) { $('connection').textContent = '○ Connect Redis in Vercel to enable passes'; return; }
   $('connection').textContent = `● ${data.storage === 'shared' ? 'Shared' : 'Local'} vault connected · ${data.aiEnabled ? 'AI ready' : 'manual mode'}`;
 }).catch(() => { $('connection').textContent = '○ Server offline'; });

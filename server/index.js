@@ -29,7 +29,7 @@ export function createHandler({ now, ttlMs, apiKey = process.env.NEBIUS_API_KEY,
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
     const origin = req.headers.origin;
     const allowed = ownOrigins.has(origin) || /^chrome-extension:\/\/[a-p]{32}$/.test(origin || '');
-    const json = (status, body) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
+    const json = (status, body) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ...body, serverTime: (now || Date.now)() })); };
     if (origin && !allowed) return json(403, { error: 'Origin not allowed.' });
     if (allowed) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
     if (req.method === 'OPTIONS') {
