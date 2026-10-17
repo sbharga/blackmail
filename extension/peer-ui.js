@@ -2,6 +2,7 @@ import * as transport from './p2p.js';
 import { serverNow } from './app.js';
 import { createReconnect, connectionLabel } from './peer-reconnect.js';
 import { createPeerSession } from './p2p-session.js';
+import { demoPeerFor } from './demo-peers.js';
 export function setupPeerUI() {
   const $ = id => document.getElementById(id);
   let busy = false, contact = null;
@@ -13,7 +14,10 @@ export function setupPeerUI() {
     const current = session.snapshot();
     const remembered = reconnect?.snapshot();
     $('peer-state').textContent = contact ? connectionLabel(current.state, remembered || {}) : 'Select a contact';
-    $('peer-expiry').textContent = remembered?.remembered ? `Link saved in this browser until ${new Date(remembered.expiresAt).toLocaleDateString()}. Both people must be online to reconnect.` : 'Complete setup once and wait for “link saved” before refreshing.';
+    $('peer-expiry').textContent = demoPeerFor(owner) === contact?.id
+      ? 'Diana–Bob demo pairing is automatic for these two accounts. Both must be online; no copy/paste setup needed.'
+      : remembered?.remembered ? `Link saved in this browser until ${new Date(remembered.expiresAt).toLocaleDateString()}. Both people must be online to reconnect.` : 'Complete setup once and wait for “link saved” before refreshing.';
+    $('peer-forget').textContent = demoPeerFor(owner) === contact?.id ? 'Disconnect this demo session' : 'Forget remembered link';
     for (const id of ['peer-offer', 'peer-answer', 'peer-finalize']) $(id).disabled = busy || !contact;
     document.dispatchEvent(new Event('blackmail-peer-change'));
     if (current.state === 'Connected') reconnect?.ready();

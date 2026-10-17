@@ -1,4 +1,5 @@
 const usernamePattern = /^[a-z][a-z0-9_]{2,23}$/;
+import { demoPeerFor } from '../extension/demo-peers.js';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function isPublishableKey(key) {
   if (typeof key !== 'string') return false;
@@ -59,12 +60,16 @@ export function createMessaging({ url = process.env.SUPABASE_URL, key = process.
           return { status: 200, body: { session: { access_token: result.access_token, refresh_token: result.refresh_token, expires_at: result.expires_at || Math.floor(Date.now() / 1000) + result.expires_in } } };
         }
         const token = bearer(header);
-        if (route === 'peer-signals/read' || route === 'peer-signals/write') {
+        if (route === 'peer-signals/read' || route === 'peer-signals/write' || route === 'peer-signals/demo-link') {
           if (!peerSignals) throw fail(503, 'Automatic reconnect is not configured.');
           if (!uuidPattern.test(body.contactId)) throw fail(400, 'Choose a contact first.');
           const user = await request('/auth/v1/user', { token, method: 'GET' });
           const contacts = await request('/rest/v1/rpc/list_contacts', { token, body: {} });
           if (user.id === body.contactId || !contacts.some(contact => contact.id === body.contactId)) throw fail(403, 'Choose one of your contacts.');
+          if (route.endsWith('/demo-link')) {
+            if (demoPeerFor(user.id) !== body.contactId) throw fail(403, 'This automatic demo pairing is only for Bob and Diana.');
+            return { status: 200, body: { link: await peerSignals.demoLink(user.id, body.contactId) } };
+          }
           if (route.endsWith('/read')) return { status: 200, body: { packet: await peerSignals.get(body.contactId, user.id) } };
           const packet = body.packet;
           if (!packet || typeof packet.iv !== 'string' || !/^[a-f0-9]{24}$/.test(packet.iv) ||

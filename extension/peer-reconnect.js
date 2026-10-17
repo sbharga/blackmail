@@ -1,4 +1,5 @@
 const WEEK = 7 * 24 * 60 * 60 * 1000;
+import { demoPeerFor } from './demo-peers.js';
 const CLOCK_SKEW = 5 * 60 * 1000;
 export function connectionLabel(state, link) {
   if (state === 'Connected') return link.remembered ? 'Connected · link saved' : link.storageAvailable === false ? 'Connected · browser storage unavailable' : 'Connected · saving link…';
@@ -22,7 +23,7 @@ export async function openSignal(packet, secret) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 export function createReconnect(session, { request, storage = localStorage, now = Date.now, notice = () => {} }) {
-  let owner = null, contact = null, pair = null, run = 0, busy = false, pending = null, wakeAt = 0, pausedUntil = 0, wasReady = false, storageAvailable = null;
+  let owner = null, contact = null, pair = null, run = 0, busy = false, pending = null, wakeAt = 0, pausedUntil = 0, wasReady = false, storageAvailable = null, provisioned = false;
   const key = () => `blackmail.peer-link:${owner}:${contact}`;
   const leader = () => owner < contact;
   function persist() {
@@ -79,6 +80,15 @@ export function createReconnect(session, { request, storage = localStorage, now 
     if (busy || !owner || !contact) return;
     busy = true; const currentRun = run, target = contact;
     try {
+      if (!provisioned && demoPeerFor(owner) === target) {
+        const result = await request('peer-signals/demo-link', { contactId: target });
+        if (currentRun !== run) return;
+        const link = result.link;
+        if (!link || typeof link.secret !== 'string' || !/^[a-f0-9]{64}$/.test(link.secret) || !Number.isFinite(link.expiresAt) || link.expiresAt <= now()) throw new Error('Demo link unavailable.');
+        if (pair?.id !== link.id) { pair = { ...link, confirmed: true }; persist(); pending = null; }
+        provisioned = true;
+        notice('Diana–Bob demo link ready. Waiting for the other account to come online.');
+      }
       await ready();
       if (currentRun !== run) return;
       if (!pair || pair.expiresAt <= now()) {
@@ -112,14 +122,14 @@ export function createReconnect(session, { request, storage = localStorage, now 
         if (leader()) await offer(target, credential, currentRun);
         else if (now() >= wakeAt) { wakeAt = now() + 15000; await publish({ kind: 'wake', id: crypto.randomUUID() }, target, credential); }
       }
-    } catch { if (currentRun === run) notice('Waiting for your peer or connection service. Formal sending remains available.'); }
+    } catch (error) { if (currentRun === run) notice(`Reconnect paused: ${error.message} Formal sending remains available.`); }
     finally { busy = false; }
   }
   return {
     tick, ready: () => ready().catch(() => {}),
-    select(userId, contactId) { run++; owner = userId; contact = contactId; pending = null; wakeAt = pausedUntil = 0; wasReady = false; storageAvailable = null; pair = owner && contact ? load() : null; },
+    select(userId, contactId) { run++; owner = userId; contact = contactId; pending = null; wakeAt = pausedUntil = 0; wasReady = false; storageAvailable = null; provisioned = false; pair = owner && contact ? load() : null; },
     manual() { run++; pausedUntil = now() + 120000; pending = null; wasReady = false; },
-    forget() { run++; if (owner && contact) { try { storage.removeItem(key()); } catch {} } pair = null; pending = null; pausedUntil = Infinity; session.reset(contact); notice('Remembered link removed from this browser.'); },
+    forget() { run++; if (owner && contact) { try { storage.removeItem(key()); } catch {} } pair = null; pending = null; pausedUntil = Infinity; session.reset(contact); notice(demoPeerFor(owner) === contact ? 'Demo disconnected for this session. Refresh or sign in again to reconnect.' : 'Remembered link removed from this browser.'); },
     snapshot: () => ({ remembered: Boolean(storageAvailable && pair?.confirmed && pair.expiresAt > now()), expiresAt: pair?.expiresAt, storageAvailable }),
   };
 }
