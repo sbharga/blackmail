@@ -19,7 +19,7 @@ This branch's preview domain is public through a Vercel protection exception. Ot
 
 - Postgres RLS limits messages to sender/recipient and prevents sender impersonation. Formal records are append-only for app users.
 - API uses the publishable key plus the user’s JWT. No admin key is needed at runtime.
-- Only approved `body_formal` is written. Original drafts stay on the tab; AI rewriting separately sends drafts to Nebius. Informal encrypted delivery belongs to `encrypted-dm`.
+- Only approved `body_formal` is written. Original drafts stay on the tab; AI rewriting separately sends drafts to Nebius. Informal encrypted delivery uses the P2P channel ([p2p.md](p2p.md)).
 - Sessions persist in per-tab `sessionStorage` and refresh automatically. Sign-out clears the tab’s tokens and conversation. Closing the tab ends local persistence.
 - New messages poll every three seconds while the inbox is visible; contacts refresh periodically. Latest 100 messages are shown. Email delivery is handled by Supabase Auth; production use needs a suitable SMTP configuration.
 - Usernames are discoverable by exact lookup. Adding a contact is one-way; there is no mutual acceptance or block/report flow yet.
