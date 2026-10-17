@@ -20,13 +20,13 @@ const save = () => {
   history = history.slice(0, 50);
   try { localStorage.setItem('blackmail.sent', JSON.stringify(history)); } catch { status('Browser history unavailable. Keep this tab open to revoke your pass.'); }
 };
-async function api(path, body, method = 'POST') {
+async function api(path, body, method = 'POST', token) {
   let response;
-  try { response = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(35000), cache: 'no-store' }); }
+  try { response = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body), signal: AbortSignal.timeout(35000), cache: 'no-store' }); }
   catch { throw new Error('BlackMail server unavailable. Check your connection or local server.'); }
   const result = await response.json();
   if (Number.isFinite(result.serverTime)) serverOffset = result.serverTime - Date.now();
-  if (!response.ok) throw new Error(result.error || 'Request failed.');
+  if (!response.ok) throw Object.assign(new Error(result.error || 'Request failed.'), { status: response.status });
   return result;
 }
 function tab(name) {

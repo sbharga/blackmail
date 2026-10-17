@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BlackMail — Between the lines</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="demo.css">
+  <title>BlackMail — Between the lines</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="demo.css"><link rel="stylesheet" href="messaging.css">
 </head>
 <body>
   <header><a class="brand" href="index.html"><span class="logo">b.</span> BlackMail<span class="beta">BETA</span></a><span id="connection" class="connection">Connecting…</span></header>
@@ -10,8 +10,12 @@
     <div class="eyebrow">FOR THE RECORD. AND OFF IT.</div>
     <h1>One message.<br><span>Two sides of you.</span></h1>
     <p class="intro">Keep it professional out there. Be yourself in here.</p>
-    <nav aria-label="Workspace"><button class="tab active" data-tab="demo">01 &nbsp; Chat demo</button><button class="tab" data-tab="compose">02 &nbsp; Compose</button><button class="tab" data-tab="receive">03 &nbsp; Open a pass</button><button class="tab" data-tab="sent">04 &nbsp; Your passes</button></nav>
-    <section id="demo" class="panel">
+    <nav aria-label="Workspace"><button class="tab active" data-tab="messaging">Messages</button><button class="tab" data-tab="demo">Chat demo</button><button class="tab" data-tab="compose">Compose</button><button class="tab" data-tab="receive">Open a pass</button><button class="tab" data-tab="sent">Your passes</button></nav>
+    <section id="messaging" class="panel">
+      <div id="account-gate" class="card account-card"><span class="badge">YOUR REAL CONVERSATIONS</span><h2>Keep a connection.</h2><p>Sign in to send formal messages to other BlackMail users.</p><div class="account-tabs" role="group" aria-label="Account action"><button id="account-login-mode" class="secondary" aria-pressed="true">Sign in</button><button id="account-signup-mode" class="secondary" aria-pressed="false">Create account</button></div><form id="account-form" class="account-form"><div id="signup-fields" class="hidden"><label for="account-name">Display name</label><input id="account-name" maxlength="60" autocomplete="name"><label for="account-username">Username</label><input id="account-username" minlength="3" maxlength="24" pattern="[a-z][a-z0-9_]{2,23}" autocomplete="username" placeholder="alice"><p class="auth-help">3–24 lowercase letters, numbers or underscores. Starts with a letter.</p></div><div><label for="account-email">Email</label><input id="account-email" type="email" autocomplete="email" required maxlength="254"></div><div><label for="account-password">Password</label><input id="account-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></div><button id="account-submit" type="submit" class="primary">Sign in ↗</button></form><p id="account-status" class="account-status" role="status" aria-live="polite">Checking account service…</p><p class="messaging-note">Formal text is delivered and stored in your BlackMail inbox. Your private draft is not included in that record. AI polishing sends the draft to Nebius.</p></div>
+      <div id="live-inbox" class="hidden"><div class="live-account"><div><strong id="account-identity"></strong><p>Formal inbox · visible only to you and each recipient.</p></div><div class="live-actions"><button id="inbox-refresh" class="secondary">Refresh</button><button id="account-logout" class="secondary">Sign out</button></div></div><div class="chat-shell live-chat"><aside class="contacts" aria-label="Your contacts"><div class="contacts-label">CONTACTS</div><form id="add-contact-form" class="add-contact"><label for="contact-username" class="hidden">Contact username</label><input id="contact-username" placeholder="@username" aria-label="Contact username" maxlength="25" required><button id="add-contact-submit" class="small" type="submit">Add</button></form><div id="live-contacts" class="live-contact-list"></div><div class="contact-foot">Share your username.<br>Start a conversation.</div></aside><div class="chat-main"><div class="chat-top"><div class="chat-contact"><span id="live-avatar" class="avatar bob">?</span><div><strong id="live-contact-name">Choose a contact</strong><small id="live-contact-username">Add someone by username to begin.</small></div></div><span class="badge">FORMAL RECORD</span></div><div id="live-messages" class="chat-messages" role="log" aria-label="Formal conversation" aria-live="polite"><p class="empty-inbox">Your conversations start here.</p></div><div class="chat-composer"><label for="live-draft">Private draft · stays on this tab</label><textarea id="live-draft" maxlength="3000" rows="2" placeholder="Write naturally, then review the formal version…" disabled></textarea><div class="composer-actions"><button id="live-polish" class="small" disabled>Polish with AI ↗</button><button id="live-review" class="primary" disabled>Review formal ↗</button></div><div id="live-preview" class="chat-preview hidden"><label for="live-formal">Formal version · this is what your recipient receives</label><textarea id="live-formal" maxlength="6000" rows="2"></textarea><div class="actions"><button id="live-send" class="primary">Send formal message ↗</button><button id="live-cancel" class="secondary">Cancel</button></div></div><p id="inbox-status" class="account-status" role="status" aria-live="polite"></p></div></div></div></div>
+    </section>
+    <section id="demo" class="panel hidden">
       <div class="demo-caption"><span class="badge">INTERACTIVE DEMO</span><p>Try both sides of a conversation. Simulated contacts and passes; no messages sent. AI polishing uses Nebius.</p></div>
       <div class="chat-shell">
         <aside class="contacts" aria-label="Demo contacts">
@@ -45,5 +49,6 @@
   </main>
   <script type="module" src="app.js"></script>
   <script type="module" src="demo.js"></script>
+  <script type="module" src="messaging.js"></script>
 </body>
 </html>
