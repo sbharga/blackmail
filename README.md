@@ -2,6 +2,41 @@
 
 One message. Two voices. Browser-extension MVP with local and Vercel hosting modes.
 
+## Ideal setup: one conversation, two channels
+
+Based on the product sketch: A writes naturally in BlackMail. B receives an approved formal version through the existing messaging platform, and can optionally open the original through BlackMail. Gmail is one example; the same design targets Outlook, Slack, Discord, and WhatsApp Web.
+
+```mermaid
+flowchart LR
+    A["A writes in BlackMail"] --> E["BlackMail extension<br/>Preview original + formal rewrite"]
+    E -->|Approved formal version| M["Platform M<br/>Gmail / Outlook / Slack / Discord / WhatsApp Web"]
+    M --> B["B receives the formal message"]
+    E -->|Encrypted informal original| V["BlackMail private channel"]
+    A -.->|Shares a short-lived pass| K["B unlocks through BlackMail"]
+    V -->|Valid pass required| K
+    K --> S["Companion conversation<br/>Originals aligned with the platform thread"]
+```
+
+The intended experience is two conversations side by side: the normal platform thread keeps the formal record, while an extension-owned companion panel shows the informal originals for that same thread. B can reply through the same flow, reversing the sender and recipient roles. Compose once; review both versions; deliver each through its own channel.
+
+- **Normal platform:** receives only the approved formal text. The original and its unlock key are not embedded in the formal message or hidden inside the platform's page.
+- **BlackMail:** holds encrypted originals, unlocked separately through a short-lived pass from the sender. The current five-minute pass expires after creation; automatic key rotation and recipient-bound access are future work.
+- **Expiry / revocation / deletion:** removes future access to the informal original without issuing a delete request for the formal message on the other platform. The formal record remains subject to that platform's own retention and deletion rules.
+- **Trust boundary:** anyone with a current MVP pass can use it. Future account-bound connections should restrict access to the intended recipient. Neither design can recall screenshots, copied text, or an original already read.
+
+The goal is control over future access to your casual voice while keeping a usable formal record. This does not make BlackMail categorically more secure than established messengers, and a formal rewrite cannot reconstruct the exact original.
+
+| Capability | Current MVP | Ideal setup |
+| --- | --- | --- |
+| Compose original + approve formal rewrite | Implemented; AI optional | Available inside the messaging workflow |
+| Deliver formal message | User copies/pastes and sends | Platform-specific send integration after approval |
+| Open informal original | Paste a five-minute pass into BlackMail | Companion panel aligned with the platform thread |
+| Recipient access | Bearer pass; no accounts | Authenticated, recipient-bound connection + short-lived authorization |
+| Replies and thread matching | Independent message passes | Bidirectional companion conversation linked to the formal thread |
+| Revoke informal access | Implemented | Same behavior across supported integrations |
+
+Browser extensions target the web versions of these platforms. Each integration needs its own implementation; native mobile apps are outside this extension's scope.
+
 ## Run
 
 Node.js 22+; no npm dependencies.
@@ -29,15 +64,15 @@ Optional AI: copy `.env.example` to `.env`, add your Nebius key, restart the ser
 4. B opens BlackMail → **Open a pass** → paste → unlock.
 5. A opens **Your passes** → **Revoke original**. The formal message on the other platform stays intact.
 
-For two browser profiles, both must use the same running local server on this computer. This loopback-only MVP does not connect two remote computers. **Preview recipient view** demonstrates the flow in one tab. No third-party app is accessed and no messages are sent automatically.
+For the local demo, both browser profiles must use the same running server on this computer. The hosted web app uses shared Redis storage and supports recipients on different computers. **Preview recipient view** demonstrates the flow in one tab. No third-party messaging app is accessed and no messages are sent automatically.
 
 ## Access model
 
 - Each pass expires five minutes after creation, enforced by the server. This is a per-message pass, not a rotating shared password; no automatic renewal.
-- Browser encrypts originals with AES-256-GCM and a fresh random key/IV. Server stores ciphertext in memory, a hashed retrieval capability, and a separate hashed revocation capability. Decryption key never goes to the vault API.
+- Browser encrypts originals with AES-256-GCM and a fresh random key/IV. Vault stores ciphertext, a hashed retrieval capability, and a separate hashed revocation capability: in memory locally, or Redis when hosted. Decryption key never goes to the vault API.
 - Pass includes message ID, retrieval capability, and decryption key. Anyone holding the complete pass can open it until expiry/revocation. No account binding or mutual-connection verification yet. Share it through a channel you trust.
 - Sender history stores formal text and the revocation capability in that browser's local storage. It does not store originals, recipient passes, or encryption keys. Clearing browser data loses revocation controls; five-minute expiry still applies.
-- Expired records are purged on vault operations. Revocation deletes the record immediately. Server restart loses all originals; browser history remains.
+- Local expired records are purged on vault operations; Redis records have a five-minute TTL. Revocation deletes the record immediately. Restarting the local memory server loses originals; hosted records survive function restarts until expiry/revocation. Browser history remains.
 - Recipient UI clears plaintext on expiry, tab hiding, or closing. While visible it checks server access every three seconds. Revocation cannot recall plaintext already downloaded, screenshots, copies, or modified clients. This is time-limited access, not screenshot prevention or a claim of stronger security than established messengers.
 - Only encrypted originals are sent to the vault. Optional AI rewriting separately exposes the draft to the configured provider. Formal text is intentionally persistent wherever the sender sends it; BlackMail cannot guarantee another platform's retention behavior.
 
