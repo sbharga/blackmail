@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "BlackMail — Between the lines",
+  "version": "0.1.0",
+  "description": "One message. Two voices. Share the original through a five-minute pass.",
+  "action": { "default_title": "Open BlackMail" },
+  "background": { "service_worker": "background.js" },
+  "host_permissions": ["http://127.0.0.1:8787/*"],
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'; connect-src http://127.0.0.1:8787" }
+}

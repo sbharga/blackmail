@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BlackMail — Between the lines</title><link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><a class="brand" href="index.html"><span class="logo">b.</span> BlackMail<span class="beta">LOCAL BETA</span></a><span id="connection" class="connection">Connecting…</span></header>
+  <main>
+    <div class="eyebrow">FOR THE RECORD. AND OFF IT.</div>
+    <h1>One message.<br><span>Two sides of you.</span></h1>
+    <p class="intro">Keep it professional out there. Be yourself in here.</p>
+    <nav aria-label="Workspace"><button class="tab active" data-tab="compose">01 &nbsp; Compose</button><button class="tab" data-tab="receive">02 &nbsp; Open a pass</button><button class="tab" data-tab="sent">03 &nbsp; Your passes</button></nav>
+    <section id="compose" class="panel">
+      <div class="columns">
+        <article class="card original"><div class="card-head"><span class="badge">PRIVATE CHANNEL</span><span class="symbol">↗</span></div><h2>The real you.</h2><p>Only shared through your BlackMail pass.</p><label for="original">Original message</label><textarea id="original" maxlength="12000" placeholder="bro these numbers are wrong 😭 redo the totals before we send it"></textarea><div class="card-bottom"><span id="count">0 / 12,000</span><button id="rewrite" class="small">Polish with AI ↗</button></div></article>
+        <article class="card formal"><div class="card-head"><span class="badge">PUBLIC CHANNEL</span><span class="symbol">↗</span></div><h2>For the record.</h2><p>This is what you send through your usual app.</p><label for="formal">Formal message · review before sharing</label><textarea id="formal" maxlength="12000" placeholder="The figures appear to be incorrect. Please recalculate the totals before we send the report."></textarea><div class="card-bottom"><span>Always editable</span><button id="copy-formal" class="small">Copy formal ↗</button></div></article>
+      </div>
+      <p class="provider-note">AI rewrite sends your draft to Nebius. Manual editing works without an API key.</p>
+      <div class="send-bar"><div><strong>A little trust. A short window.</strong><p>Original encrypted in your browser. Pass expires in 5 minutes.</p></div><button id="seal" class="primary">Create private pass <span>↗</span></button></div>
+      <div id="created" class="result hidden"><div class="result-head"><h3>Your private pass is ready.</h3><span id="created-time" class="pill"></span></div><p>Send the formal version through your app. Share this pass separately with your recipient.</p><label for="share-pass">Recipient pass · anyone holding it can open the original</label><textarea id="share-pass" readonly rows="3"></textarea><div class="actions"><button id="copy-pass" class="primary">Copy pass ↗</button><button id="try-pass" class="secondary">Preview recipient view</button></div></div>
+    </section>
+    <section id="receive" class="panel hidden"><article class="card receiver"><span class="badge">JUST BETWEEN YOU</span><h2>Got the other half?</h2><p>Paste a BlackMail pass. Valid for five minutes from creation.</p><label for="incoming">Private pass</label><textarea id="incoming" placeholder="bm1.message.access.key" rows="3"></textarea><button id="unlock" class="primary">Unlock original ↗</button><div id="opened" class="opened hidden"><div class="result-head"><span class="badge">ORIGINAL MESSAGE</span><span id="read-time" class="pill"></span></div><p id="plaintext"></p><button id="close-original" class="secondary">Close original</button></div></article></section>
+    <section id="sent" class="panel hidden"><div class="section-title"><h2>Your passes.</h2><p>Local history on this browser. Formal copies stay wherever you sent them.</p></div><div id="history"></div></section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <footer><span>BLACKMAIL / SAY IT YOUR WAY</span><p>Passes limit future access. They cannot undo screenshots, copying, or messages already read.</p></footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
