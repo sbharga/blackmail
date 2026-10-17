@@ -126,7 +126,7 @@ function selectContact(contact) {
   $('live-contact-username').textContent = `@${contact.username}`;
   $('live-avatar').textContent = contact.display_name[0]?.toUpperCase() || '?';
   $('live-draft').value = ''; invalidatePreview();
-  $('live-draft').disabled = false; $('live-polish').disabled = false; $('live-review').disabled = false;
+  $('live-draft').disabled = false; $('live-review').disabled = false;
   $('live-messages').replaceChildren(node('p', 'empty-inbox', 'Loading conversation…'));
   drawContacts(); inboxStatus(''); sync(true);
 }
@@ -227,12 +227,8 @@ $('live-draft').addEventListener('input', invalidatePreview);
 $('live-formal').addEventListener('input', () => { pendingMessageId = null; });
 $('live-review').addEventListener('click', async () => {
   if (!selected || !$('live-draft').value.trim()) { inboxStatus('Write a draft first.'); return; }
-  if (connected() && aiRevision !== revision) { await polishDraft(); return; }
-  if ($('live-preview').classList.contains('hidden')) {
-    $('live-formal').value = $('live-draft').value;
-    $('live-preview').classList.remove('hidden');
-    inboxStatus('Edit the formal version, or use AI. Only this version will be sent.');
-  }
+  if (aiRevision !== revision) { await polishDraft(); return; }
+  $('live-preview').classList.remove('hidden');
   $('live-formal').focus();
 });
 async function polishDraft() {
@@ -240,16 +236,21 @@ async function polishDraft() {
   const text = $('live-draft').value;
   if (!selected || !text.trim()) { inboxStatus('Write a draft first.'); return; }
   const started = epoch, currentRevision = revision;
-  polishing = true; $('live-polish').disabled = true; $('live-review').disabled = true; $('live-send').disabled = true; inboxStatus('Polishing with Nebius…');
+  polishing = true; $('live-review').disabled = true; $('live-send').disabled = true; inboxStatus('Preparing your review with Nebius…');
   try {
     const result = await api('/api/rewrite', { text });
     if (started !== epoch || currentRevision !== revision) return;
     $('live-formal').value = result.text; pendingMessageId = null; aiRevision = currentRevision;
     $('live-preview').classList.remove('hidden'); inboxStatus('Review the formal version before sending.');
-  } catch (error) { if (started === epoch) inboxStatus(error.message); }
-  finally { polishing = false; for (const id of ['live-polish', 'live-review', 'live-send']) $(id).disabled = !selected || sending; }
+  } catch (error) {
+    if (started !== epoch || currentRevision !== revision) return;
+    if (!connected()) {
+      $('live-formal').value = text; $('live-preview').classList.remove('hidden');
+      inboxStatus('AI unavailable. Edit and review the formal version manually before sending.');
+    } else inboxStatus(error.message);
+  }
+  finally { polishing = false; for (const id of ['live-review', 'live-send']) $(id).disabled = !selected || sending; }
 }
-$('live-polish').addEventListener('click', polishDraft);
 $('live-cancel').addEventListener('click', () => { invalidatePreview(); inboxStatus('Draft kept.'); });
 $('live-send').addEventListener('click', async () => {
   if (sending || polishing || !selected) return;
@@ -261,7 +262,7 @@ $('live-send').addEventListener('click', async () => {
   pendingMessageId ||= crypto.randomUUID();
   const clientMessageId = pendingMessageId;
   sending = true;
-  for (const id of ['live-send', 'live-formal', 'live-draft', 'live-review', 'live-polish', 'live-cancel']) $(id).disabled = true;
+  for (const id of ['live-send', 'live-formal', 'live-draft', 'live-review', 'live-cancel']) $(id).disabled = true;
   inboxStatus('Sending formal message…');
   try {
     const delivery = await deliverMessage({
@@ -283,7 +284,7 @@ $('live-send').addEventListener('click', async () => {
   } catch (error) { if (started === epoch) inboxStatus(`${error.message} Retry safely; the same message won’t be duplicated.`); }
   finally {
     sending = false;
-    for (const id of ['live-send', 'live-formal', 'live-draft', 'live-review', 'live-polish', 'live-cancel']) $(id).disabled = !selected;
+    for (const id of ['live-send', 'live-formal', 'live-draft', 'live-review', 'live-cancel']) $(id).disabled = !selected;
   }
 });
 document.querySelector('[data-tab="messaging"]').addEventListener('click', () => sync(true));
