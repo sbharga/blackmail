@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PeerSignals } from '../server/peer-signals.js';
 import { createMessaging } from '../server/supabase.js';
-import { createReconnect, sealSignal, openSignal } from '../extension/peer-reconnect.js';
+import { createReconnect, sealSignal, openSignal, connectionLabel } from '../extension/peer-reconnect.js';
 
 test('signaling packets are encrypted, authenticated and expire without storing informal text', async () => {
   const secret = 'ab'.repeat(32), packet = await sealSignal({ token: 'synthetic-SDP', kind: 'offer' }, secret);
@@ -28,6 +28,28 @@ test('relay derives sender from JWT and rejects unrelated contacts', async () =>
   assert.equal((await app.handle('/api/messaging/peer-signals/write',token,{contactId,packet:{...packet,iv:'bad'}})).status,400);
 });
 const storage = () => { const map=new Map();return { getItem:key=>map.get(key)||null,setItem:(key,value)=>map.set(key,value),removeItem:key=>map.delete(key) }; };
+test('saved links tolerate small clock skew and pairing completes before the responder pong', async () => {
+  let receiveA, receiveB; const sa=storage(),sb=storage();
+  const a=createReconnect({snapshot:()=>({state:'Connected'}),onControl:fn=>{receiveA=fn;},control:async value=>receiveB(value)},
+    {storage:sa,now:()=>10000,request:async()=>({})});
+  const b=createReconnect({snapshot:()=>({state:'Handshaking'}),onControl:fn=>{receiveB=fn;},control:async value=>receiveA(value)},
+    {storage:sb,now:()=>9000,request:async()=>({})});
+  a.select('a','b');b.select('b','a');await a.ready();
+  assert.equal(a.snapshot().remembered,true);assert.equal(b.snapshot().remembered,true);
+  const restored=createReconnect({snapshot:()=>({state:'Disconnected'}),onControl:()=>{}},
+    {storage:sa,now:()=>9500,request:async()=>({})});
+  restored.select('a','b');assert.equal(restored.snapshot().remembered,true);
+  assert.match(connectionLabel('Disconnected',restored.snapshot()),/Reconnecting/);
+  assert.match(connectionLabel('Disconnected',{remembered:false}),/Not paired/);
+});
+test('blocked browser storage never claims that a peer link is saved', async () => {
+  let receive;
+  const reconnect=createReconnect({snapshot:()=>({state:'Connected'}),onControl:fn=>{receive=fn;},control:async value=>receive({kind:'remember-ack',id:value.id})},
+    {storage:{getItem:()=>null,setItem:()=>{throw Error('blocked');},removeItem:()=>{}},now:()=>10000,request:async()=>({})});
+  reconnect.select('a','b');await reconnect.ready();
+  assert.equal(reconnect.snapshot().remembered,false);
+  assert.match(connectionLabel('Connected',reconnect.snapshot()),/storage unavailable/);
+});
 test('seven-day peer credentials restore and automatically exchange fresh offer/answer after refresh', async () => {
   let clock=1000, phase='Connected', controlA, controlB;
   const signals = new Map(), sa=storage(), sb=storage();

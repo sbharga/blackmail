@@ -25,13 +25,14 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
     let packet; try { packet = JSON.parse(raw); } catch { return; }
     if (packet.blackmail !== 1 || typeof packet.session !== 'string') return;
     if (packet.type === 'ping' && typeof packet.nonce === 'string') {
+      remoteSession = packet.session;
       transport.send_peer_too_peer(envelope('pong', { nonce: packet.nonce }), peer).catch(() => {});
       return;
     }
     if (packet.type === 'pong' && packet.nonce === probe) {
       remoteSession = packet.session; lastSeen = now(); state = 'Connected'; emit(); return;
     }
-    if (packet.type === 'control' && state === 'Connected' && packet.session === remoteSession) {
+    if (packet.type === 'control' && ['Connected', 'Handshaking'].includes(state) && packet.session === remoteSession) {
       controlHandler(packet.value); return;
     }
     if (packet.type !== 'message' || state !== 'Connected' || packet.session !== remoteSession ||
@@ -42,7 +43,7 @@ export function createPeerSession(transport, changed = () => {}, now = Date.now)
     snapshot, reset, tick,
     onControl(handler) { controlHandler = handler; },
     async control(value) {
-      if (!peer || state !== 'Connected') throw new Error('Peer is offline.');
+      if (!peer || !remoteSession || !['Connected', 'Handshaking'].includes(state)) throw new Error('Peer is offline.');
       await transport.send_peer_too_peer(envelope('control', { value }), peer);
     },
     async offer() {
