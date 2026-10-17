@@ -1,6 +1,7 @@
 import { setupPeerUI } from './peer-ui.js';
 import { deliverMessage } from './message-delivery.js';
 import { messageView } from './message-view.js';
+import { demoPeerFor } from './demo-peers.js';
 import { api, serverNow } from './app.js';
 
 const $ = id => document.getElementById(id);
@@ -120,7 +121,17 @@ async function openInbox(restore = true) {
     const previous = sessionStorage.getItem(`blackmail.selected:${profile.id}`);
     const contact = contacts.find(item => item.id === previous);
     if (restore && contact) selectContact(contact);
-    else if (!restore) sessionStorage.removeItem(`blackmail.selected:${profile.id}`);
+    else {
+      const demoContact = contacts.find(item => item.id === demoPeerFor(profile.id));
+      if (demoContact) peerUI.select(demoContact);
+      else {
+        const savedContact = [contact, ...contacts].filter(Boolean).find(item => {
+          try { const saved = JSON.parse(localStorage.getItem(`blackmail.peer-link:${profile.id}:${item.id}`) || 'null'); return saved?.confirmed && saved.expiresAt > serverNow(); } catch { return false; }
+        });
+        if (savedContact) peerUI.select(savedContact);
+      }
+      if (!restore) sessionStorage.removeItem(`blackmail.selected:${profile.id}`);
+    }
   } catch { /* Contact selection remains usable without storage. */ }
 }
 function showOverview() {

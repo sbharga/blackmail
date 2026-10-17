@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { PeerSignals } from '../server/peer-signals.js';
 import { createMessaging } from '../server/supabase.js';
 import { createReconnect, sealSignal, openSignal, connectionLabel } from '../extension/peer-reconnect.js';
+import { DEMO_PAIR_IDS } from '../extension/demo-peers.js';
 
 test('signaling packets are encrypted, authenticated and expire without storing informal text', async () => {
   const secret = 'ab'.repeat(32), packet = await sealSignal({ token: 'synthetic-SDP', kind: 'offer' }, secret);
@@ -28,6 +29,34 @@ test('relay derives sender from JWT and rejects unrelated contacts', async () =>
   assert.equal((await app.handle('/api/messaging/peer-signals/write',token,{contactId,packet:{...packet,iv:'bad'}})).status,400);
 });
 const storage = () => { const map=new Map();return { getItem:key=>map.get(key)||null,setItem:(key,value)=>map.set(key,value),removeItem:key=>map.delete(key) }; };
+test('Bob/Diana share one private demo link, scoped to exact IDs and expiring after seven days', async () => {
+  let clock=1000;const store=new PeerSignals({now:()=>clock});const [bob,diana]=DEMO_PAIR_IDS;
+  const first=await store.demoLink(bob,diana),other=await store.demoLink(diana,bob);
+  assert.deepEqual(first,other);assert.match(first.secret,/^[a-f0-9]{64}$/);
+  await assert.rejects(store.demoLink('alice',bob),/limited/);
+  clock+=7*24*60*60*1000+1;assert.notEqual((await store.demoLink(bob,diana)).id,first.id);
+});
+test('demo credential endpoint verifies JWT identity and does not grant other accounts access', async () => {
+  const [bob,diana]=DEMO_PAIR_IDS;let user=bob,calls=0;
+  const app=createMessaging({url:'https://test.supabase.co',key:'sb_publishable_test_key_123456',peerSignals:{demoLink:async(a,b)=>{calls++;assert.equal(a,bob);assert.equal(b,diana);return {id:'private-demo-link'};}},fetchImpl:async url=>new Response(JSON.stringify(url.includes('/user')?{id:user}:[{id:diana}]))});
+  const path='/api/messaging/peer-signals/demo-link',token=`Bearer ${'a'.repeat(40)}`;
+  assert.equal((await app.handle(path,null,{contactId:diana})).status,401);
+  assert.equal((await app.handle(path,token,{contactId:diana,senderId:'spoof'})).status,200);
+  user='10000000-0000-4000-8000-000000000001';
+  assert.equal((await app.handle(path,token,{contactId:diana})).status,403);assert.equal(calls,1);
+});
+test('empty-browser Bob/Diana demo reconnects automatically without manual tokens', async () => {
+  const [bob,diana]=DEMO_PAIR_IDS;let phase='Disconnected';const store=new PeerSignals({now:()=>1000});
+  const make=owner=>createReconnect({snapshot:()=>({state:phase}),onControl:()=>{},control:async()=>{},reset:()=>{phase='Disconnected';},offer:async()=>{phase='Handshaking';return 'auto-offer';},answer:async token=>{assert.equal(token,'auto-offer');return 'auto-answer';},finalize:async token=>{assert.equal(token,'auto-answer');phase='Connected';}},
+    {storage:storage(),now:()=>1000,request:async(route,body)=>{
+      if(route.endsWith('demo-link'))return {link:await store.demoLink(owner,body.contactId)};
+      if(route.endsWith('write')){await store.put(owner,body.contactId,body.packet);return {ok:true};}
+      return {packet:await store.get(body.contactId,owner)};
+    }});
+  const a=make(diana),b=make(bob);a.select(diana,bob);b.select(bob,diana);
+  await a.tick();await b.tick();await a.tick();
+  assert.equal(phase,'Connected');assert.equal(a.snapshot().remembered,true);assert.equal(b.snapshot().remembered,true);
+});
 test('saved links tolerate small clock skew and pairing completes before the responder pong', async () => {
   let receiveA, receiveB; const sa=storage(),sb=storage();
   const a=createReconnect({snapshot:()=>({state:'Connected'}),onControl:fn=>{receiveA=fn;},control:async value=>receiveB(value)},
