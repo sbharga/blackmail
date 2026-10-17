@@ -1,3 +1,4 @@
+import { setupPeerUI } from './peer-ui.js';
 import { api, serverNow } from './app.js';
 
 const $ = id => document.getElementById(id);
@@ -5,6 +6,7 @@ const node = (tag, className, text) => {
   const result = document.createElement(tag); if (className) result.className = className;
   if (text !== undefined) result.textContent = text; return result;
 };
+const peerUI = setupPeerUI();
 let session = null;
 let confirmationNotice = '';
 // Email confirmation may return credentials in the fragment. Require explicit
@@ -31,6 +33,7 @@ function invalidatePreview() {
   $('live-preview').classList.add('hidden'); $('live-formal').value = '';
 }
 function clearAccount(message = '') {
+  peerUI.select(null);
   epoch++; storeSession(null); profile = null; contacts = []; selected = null; contactsAt = 0;
   threadFingerprint = ''; refreshPromise = null;
   $('live-inbox').classList.add('hidden'); $('account-gate').classList.remove('hidden');
@@ -104,7 +107,7 @@ async function openInbox() {
 }
 function selectContact(contact) {
   if (sending) { inboxStatus('Finish sending before changing conversation.'); return; }
-  selected = contact; threadFingerprint = '';
+  selected = contact; threadFingerprint = ''; peerUI.select(contact);
   $('live-contact-name').textContent = contact.display_name;
   $('live-contact-username').textContent = `@${contact.username}`;
   $('live-avatar').textContent = contact.display_name[0]?.toUpperCase() || '?';
