@@ -31,7 +31,7 @@ Target: an extension companion panel aligned with the platform thread and recipi
 
 ## Run locally
 
-Node.js 22+; no npm dependencies.
+Node.js 22+; run `npm ci` for TypeScript build/test tools. No browser runtime dependencies.
 
 ```powershell
 npm start
@@ -39,6 +39,8 @@ npm test
 ```
 
 Open http://127.0.0.1:8787. For local AI, copy `.env.example` to `.env` and add `NEBIUS_API_KEY`. Never commit `.env`.
+
+**Informal P2P:** Messages → select a contact → Informal channel → exchange offer/answer tokens → send directly. Formal sending stays separate. Both peers must stay online. [Setup, tests and limits](docs/p2p.md).
 
 **Extension:** Chrome/Edge → Extensions → Developer mode → Load unpacked → select `extension/`. This branch points to its Supabase Preview API. For another backend, update `extension/config.js` and the matching origin permissions in `extension/manifest.json`. Review the API target before merging into production.
 

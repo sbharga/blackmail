@@ -6,7 +6,17 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "start": "node --env-file-if-exists=.env server/index.js",
-    "test": "node --test"
+    "test": "node --test test/*.test.js",
+    "prepare:p2p": "node scripts/build-p2p.mjs",
+    "prestart": "npm run prepare:p2p",
+    "test:p2p": "vitest run src/utils/tests",
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module ES2022 --lib ES2022,DOM src/utils/p2p.ts"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
 }
